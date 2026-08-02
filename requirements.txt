@@ -1,0 +1,10 @@
+# Chemistry Solution Checker — runtime dependencies
+streamlit>=1.36          # multipage navigation via st.Page / st.navigation
+sympy>=1.12              # exact rational null-space solving for the balancer
+pandas>=2.0              # result tables
+matplotlib>=3.7          # PNG export
+reportlab>=4.0           # PDF export
+requests>=2.31           # optional AI tutor (imported lazily)
+
+# Development
+pytest>=8.0
