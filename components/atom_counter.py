@@ -13,6 +13,7 @@ from components.parser import Equation, Species
 from data.elements import ELEMENTS
 
 
+
 @dataclass(frozen=True, slots=True)
 class AtomRow:
     """One element's tally across the arrow."""
