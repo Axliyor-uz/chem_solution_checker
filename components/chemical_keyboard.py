@@ -22,7 +22,7 @@ class KeyGroup:
 
     name: str
     keys: tuple[str, ...]
-    columns: int = 10
+    columns: int = 6
     hint: str = ""
     labels: dict[str, str] | None = None
 
@@ -41,25 +41,25 @@ GROUPS: Final[tuple[KeyGroup, ...]] = (
     KeyGroup(
         "Elements",
         COMMON_ELEMENTS,
-        columns=10,
+        columns=6,
         hint="The elements a syllabus uses most. Every other symbol can be typed directly.",
     ),
     KeyGroup(
         "Numbers",
         ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
-        columns=10,
+        columns=6,
         hint="A number typed before a formula is a coefficient; after a symbol it is a subscript.",
     ),
     KeyGroup(
         "Subscripts",
         ("₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉", "₁", "₀"),
-        columns=10,
+        columns=6,
         hint="Optional — typing H2O gives the same result as H₂O. Both are stored as H2O.",
     ),
     KeyGroup(
         "Charges",
         ("⁺", "⁻", "²⁺", "³⁺", "²⁻", "³⁻", "^", "^2+", "^2-", "^3+"),
-        columns=10,
+        columns=6,
         hint="Charges go after the formula: Fe³⁺, SO₄²⁻, NH₄⁺.",
     ),
     KeyGroup(
@@ -71,7 +71,7 @@ GROUPS: Final[tuple[KeyGroup, ...]] = (
     KeyGroup(
         "Operators",
         (" + ", " -> ", " <-> ", "=", "*", "↑", "↓"),
-        columns=7,
+        columns=6,
         hint="↑ and ↓ are read as (g) and (s).",
         labels={" + ": "+", " -> ": "→", " <-> ": "⇌", "*": "· (hydrate)", "=": "="},
     ),
@@ -129,38 +129,41 @@ def keyboard(target_key: str, conditions_key: str | None = None) -> None:
     """
     st.session_state.setdefault(target_key, "")
     tab_names = [group.name for group in GROUPS] + (["Catalysts"] if conditions_key else [])
-    tabs = st.tabs(tab_names)
 
-    for tab, group in zip(tabs, GROUPS):
-        with tab:
-            if group.hint:
-                st.caption(group.hint)
-            _key_grid(
-                group.keys,
-                group.columns,
-                lambda token: _append(target_key, token),
-                prefix=f"kb-{group.name}",
-                label=group.label_for,
-            )
+    with st.expander("Chemistry keyboard", expanded=False):
+        st.caption("Tap to open the keyboard. Typing normally still works too.")
+        tabs = st.tabs(tab_names)
 
-    if conditions_key:
-        with tabs[-1]:
-            st.caption("Conditions are recorded beside the equation, not inside a formula.")
-            st.session_state.setdefault(conditions_key, "")
-            _key_grid(
-                CONDITION_KEYS,
-                5,
-                lambda token: _append_condition(conditions_key, token),
-                prefix="kb-cond",
-            )
+        for tab, group in zip(tabs, GROUPS):
+            with tab:
+                if group.hint:
+                    st.caption(group.hint)
+                _key_grid(
+                    group.keys,
+                    group.columns,
+                    lambda token: _append(target_key, token),
+                    prefix=f"kb-{group.name}",
+                    label=group.label_for,
+                )
 
-    edit_columns = st.columns(3)
-    with edit_columns[0]:
-        st.button("⌫ Backspace", key="kb-back", on_click=_backspace, args=(target_key,))
-    with edit_columns[1]:
-        st.button("Space", key="kb-space", on_click=_append, args=(target_key, " "))
-    with edit_columns[2]:
-        st.button("Clear", key="kb-clear", on_click=_clear, args=(target_key,))
+        if conditions_key:
+            with tabs[-1]:
+                st.caption("Conditions are recorded beside the equation, not inside a formula.")
+                st.session_state.setdefault(conditions_key, "")
+                _key_grid(
+                    CONDITION_KEYS,
+                    6,
+                    lambda token: _append_condition(conditions_key, token),
+                    prefix="kb-cond",
+                )
+
+        edit_columns = st.columns(3)
+        with edit_columns[0]:
+            st.button("⌫ Backspace", key="kb-back", on_click=_backspace, args=(target_key,))
+        with edit_columns[1]:
+            st.button("Space", key="kb-space", on_click=_append, args=(target_key, " "))
+        with edit_columns[2]:
+            st.button("Clear", key="kb-clear", on_click=_clear, args=(target_key,))
 
 
 def _append_condition(conditions_key: str, token: str) -> None:
