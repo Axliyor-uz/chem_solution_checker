@@ -98,9 +98,9 @@ class FormulaValidator:
                 Issue(
                     level="error",
                     code="parse",
-                    title="This formula cannot be read",
+                    title="Bu formulani o'qib bo'lmadi",
                     detail=error.message,
-                    fix=f"Try: {error.suggestion}" if error.suggestion else None,
+                    fix=f"Ushbu variantni sinab ko'ring: {error.suggestion}" if error.suggestion else None,
                 )
             )
             return None, issues
@@ -110,8 +110,8 @@ class FormulaValidator:
                 Issue(
                     level="info",
                     code="charge",
-                    title=f"Read as an ion with charge {formula.charge:+d}",
-                    detail=f"Interpreted as {formula.display}.",
+                    title=f"{formula.charge:+d} zaryadli ion sifatida o'qildi",
+                    detail=f"{formula.display} deb talqin qilindi.",
                 )
             )
         for symbol, count in formula.composition.items():
@@ -120,8 +120,8 @@ class FormulaValidator:
                     Issue(
                         level="warning",
                         code="large-subscript",
-                        title=f"{symbol} has an unusually large subscript ({count})",
-                        detail="Check the subscript — this is far outside normal formulas.",
+                        title=f"{symbol} g'ayritabiiy katta indeksga ega ({count})",
+                        detail="Indeksni tekshiring — bu oddiy formulalar uchun juda katta.",
                     )
                 )
         if not issues:
@@ -129,8 +129,8 @@ class FormulaValidator:
                 Issue(
                     level="success",
                     code="formula-ok",
-                    title=f"{formula.display} is a valid formula",
-                    detail=f"Molar mass {format_number(formula.molar_mass, 3)} g/mol.",
+                    title=f"{formula.display} - to'g'ri formula",
+                    detail=f"Molyar massasi {format_number(formula.molar_mass, 3)} g/mol.",
                 )
             )
         return formula, issues
@@ -159,9 +159,9 @@ class EquationValidator:
                 Issue(
                     level="error",
                     code="parse",
-                    title="Could not read the equation",
+                    title="Tenglamani o'qib bo'lmadi",
                     detail=error.message,
-                    fix=f"Try: {error.suggestion}" if error.suggestion else None,
+                    fix=f"Ushbu variantni sinab ko'ring: {error.suggestion}" if error.suggestion else None,
                 )
             )
             return report
@@ -193,8 +193,8 @@ class EquationValidator:
                         Issue(
                             level="info",
                             code="repeated-species",
-                            title=f"{raw} appears {count} times on the {side_name}",
-                            detail="Like terms can be combined into one coefficient.",
+                            title=f"{raw} {side_name} tomonida {count} marta paydo bo'ldi",
+                            detail="O'xshash hadlarni bitta koeffitsiyentga birlashtirish mumkin.",
                         )
                     )
 
@@ -205,9 +205,9 @@ class EquationValidator:
                         Issue(
                             level="warning",
                             code="missing-plus",
-                            title="Two formulas look joined by a space",
-                            detail=f"'{piece.strip()}' was read as one species.",
-                            fix="Separate reactants and products with '+'.",
+                            title="Ikki formula bo'sh joy bilan bog'langanga o'xshaydi",
+                            detail=f"'{piece.strip()}' bitta modda sifatida o'qildi.",
+                            fix="Reaktivlar va mahsulotlarni '+' bilan ajrating.",
                         )
                     )
 
@@ -218,9 +218,9 @@ class EquationValidator:
                 Issue(
                     level="warning",
                     code="state-mismatch",
-                    title="Physical states are only given for some species",
-                    detail=f"No state on: {', '.join(missing)}.",
-                    fix="Either label every species with (s), (l), (g) or (aq), or label none.",
+                    title="Fizik holatlar faqat ba'zi moddalar uchun berilgan",
+                    detail=f"Holati ko'rsatilmaganlar: {', '.join(missing)}.",
+                    fix="Har bir moddani (s), (l), (g) yoki (aq) bilan belgilang yoki hech birini belgilamang.",
                 )
             )
 
@@ -230,9 +230,9 @@ class EquationValidator:
                 Issue(
                     level="info",
                     code="spectator",
-                    title=f"Unchanged on both sides: {', '.join(spectators)}",
-                    detail="Species that appear identically on both sides take no part.",
-                    fix="Cancel them to get the net ionic equation.",
+                    title=f"Ikkala tomonda ham o'zgarmasdan qolganlar: {', '.join(spectators)}",
+                    detail="Ikkala tomonda ham bir xil ko'rinishda bo'lgan moddalar reaksiyada qatnashmaydi.",
+                    fix="Sof ionli tenglamani olish uchun ularni qisqartiring.",
                 )
             )
         return issues
@@ -245,15 +245,15 @@ class EquationValidator:
         if result.status == "missing_species":
             orphans = orphan_elements(equation)
             for symbol, side in sorted(orphans.items()):
-                other = "products" if side == "left" else "reactants"
+                other = "mahsulotlarda" if side == "left" else "reaktivlarda"
                 issues.append(
                     Issue(
                         level="error",
                         code="orphan-element",
-                        title=f"{symbol} appears only on the {side}",
-                        detail=f"Atoms cannot vanish, so a species containing {symbol} "
-                        f"is missing from the {other}.",
-                        fix=f"Add the missing {other[:-1]} that carries the {symbol}.",
+                        title=f"{symbol} faqat {side} tomonida mavjud",
+                        detail=f"Atomlar yo'qolib qolmaydi, shuning uchun tarkibida {symbol} bo'lgan "
+                        f"modda {other} yetishmayapti.",
+                        fix=f"{symbol} tutgan yetishmayotgan {other[:-1]}ni qo'shing.",
                     )
                 )
             return issues
@@ -263,9 +263,9 @@ class EquationValidator:
                 Issue(
                     level="error",
                     code="impossible",
-                    title="This reaction cannot be balanced as written",
+                    title="Bu reaksiya yozilganidek tenglashtirilishi mumkin emas",
                     detail=result.message,
-                    fix="Check each formula against the compound you meant.",
+                    fix="Har bir formulani o'zingiz nazarda tutgan birikma bilan solishtiring.",
                 )
             )
             return issues
@@ -276,7 +276,7 @@ class EquationValidator:
                 Issue(
                     level="success",
                     code="balanced",
-                    title="Every element balances",
+                    title="Har bir element tenglashgan",
                     detail="; ".join(f"{row.element}: {row.left} = {row.right}" for row in rows),
                 )
             )
@@ -286,9 +286,9 @@ class EquationValidator:
                     Issue(
                         level="warning",
                         code="not-lowest-terms",
-                        title="Coefficients are not in lowest terms",
-                        detail=f"Every coefficient can be divided by {factor}.",
-                        fix=f"Write it as {result.equation.display}."
+                        title="Koeffitsiyentlar eng kichik hadlarda emas",
+                        detail=f"Har bir koeffitsiyentni {factor} ga bo'lish mumkin.",
+                        fix=f"Uni {result.equation.display} ko'rinishida yozing."
                         if result.equation
                         else None,
                     )
@@ -296,13 +296,13 @@ class EquationValidator:
         else:
             wrong = [row for row in rows if not row.balanced]
             detail = "; ".join(
-                f"{row.element}: {row.left} on the left, {row.right} on the right" for row in wrong
+                f"{row.element}: chapda {row.left}, o'ngda {row.right}" for row in wrong
             )
             issues.append(
                 Issue(
                     level="error",
                     code="unbalanced",
-                    title=f"{self._name_elements(wrong)} not balanced",
+                    title=f"{self._name_elements(wrong)} tenglashmagan",
                     detail=detail,
                     fix=self._coefficient_fix(equation, result),
                 )
@@ -313,9 +313,9 @@ class EquationValidator:
                 Issue(
                     level="warning",
                     code="underdetermined",
-                    title="More than one balancing is possible",
+                    title="Bir nechta tenglashtirish usuli mavjud",
                     detail=result.message,
-                    fix="Write each reaction separately to get a unique answer.",
+                    fix="Noyob javobni olish uchun har bir reaksiyani alohida yozing.",
                 )
             )
         return issues

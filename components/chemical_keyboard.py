@@ -39,53 +39,53 @@ COMMON_ELEMENTS: Final[tuple[str, ...]] = (
 
 GROUPS: Final[tuple[KeyGroup, ...]] = (
     KeyGroup(
-        "Elements",
+        "Elementlar",
         COMMON_ELEMENTS,
         columns=10,
-        hint="The elements a syllabus uses most. Every other symbol can be typed directly.",
+        hint="O'quv dasturlarida eng ko'p qo'llaniladigan elementlar. Boshqa barcha belgilarni bevosita kiritish mumkin.",
     ),
     KeyGroup(
-        "Numbers",
+        "Raqamlar",
         ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
         columns=10,
-        hint="A number typed before a formula is a coefficient; after a symbol it is a subscript.",
+        hint="Formuladan oldin yozilgan raqam - koeffitsiyent; belgidan keyin yozilgani - indeks.",
     ),
     KeyGroup(
-        "Subscripts",
+        "Indekslar",
         ("₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉", "₁", "₀"),
         columns=10,
-        hint="Optional — typing H2O gives the same result as H₂O. Both are stored as H2O.",
+        hint="Ixtiyoriy — H2O deb yozish H₂O kabi natija beradi. Ikkalasi ham H2O sifatida saqlanadi.",
     ),
     KeyGroup(
-        "Charges",
+        "Zaryadlar",
         ("⁺", "⁻", "²⁺", "³⁺", "²⁻", "³⁻", "^", "^2+", "^2-", "^3+"),
         columns=10,
-        hint="Charges go after the formula: Fe³⁺, SO₄²⁻, NH₄⁺.",
+        hint="Zaryadlar formuladan keyin qo'yiladi: Fe³⁺, SO₄²⁻, NH₄⁺.",
     ),
     KeyGroup(
-        "Brackets",
+        "Qavslar",
         ("(", ")", "[", "]", "{", "}"),
         columns=6,
-        hint="Brackets group a repeated unit: Ca(OH)₂, Al₂(SO₄)₃.",
+        hint="Qavslar takrorlanuvchi birlikni guruhlaydi: Ca(OH)₂, Al₂(SO₄)₃.",
     ),
     KeyGroup(
-        "Operators",
+        "Operatorlar",
         (" + ", " -> ", " <-> ", "=", "*", "↑", "↓"),
         columns=7,
-        hint="↑ and ↓ are read as (g) and (s).",
-        labels={" + ": "+", " -> ": "→", " <-> ": "⇌", "*": "· (hydrate)", "=": "="},
+        hint="↑ va ↓ mos ravishda (g) va (s) deb o'qiladi.",
+        labels={" + ": "+", " -> ": "→", " <-> ": "⇌", "*": "· (kristallgidrat)", "=": "="},
     ),
     KeyGroup(
-        "States",
+        "Holatlar",
         ("(s)", "(l)", "(g)", "(aq)"),
         columns=4,
-        hint="Physical state goes last: NaCl(aq), H₂O(l), CO₂(g).",
+        hint="Fizik holat oxirida yoziladi: NaCl(aq), H₂O(l), CO₂(g).",
     ),
     KeyGroup(
-        "Greek",
+        "Yunoncha",
         ("Δ", "λ", "α", "β", "γ", "°"),
         columns=6,
-        hint="Δ marks heating, λ a wavelength, α and β radiation types.",
+        hint="Δ - qizdirish, λ - to'lqin uzunligi, α va β - nurlanish turlari.",
     ),
 )
 
@@ -94,14 +94,14 @@ CONDITION_KEYS: Final[tuple[str, ...]] = (
 )
 
 EXAMPLES: Final[tuple[tuple[str, str], ...]] = (
-    ("Water from its elements", "H2 + O2 -> H2O"),
-    ("Rusting iron", "Fe + O2 -> Fe2O3"),
-    ("Thermal decomposition", "CaCO3 -> CaO + CO2"),
-    ("Neutralisation", "NaOH + HCl -> NaCl + H2O"),
-    ("Burning propane", "C3H8 + O2 -> CO2 + H2O"),
-    ("Contact process", "SO2(g) + O2(g) <=> SO3(g)"),
-    ("Precipitation", "NaCl(aq) + AgNO3(aq) -> AgCl(s) + NaNO3(aq)"),
-    ("Ionic redox", "MnO4- + Fe2+ + H+ -> Mn2+ + Fe3+ + H2O"),
+    ("Suvning elementlaridan hosil bo'lishi", "H2 + O2 -> H2O"),
+    ("Temirning zanglashi", "Fe + O2 -> Fe2O3"),
+    ("Termik parchalanish", "CaCO3 -> CaO + CO2"),
+    ("Neytrallanish", "NaOH + HCl -> NaCl + H2O"),
+    ("Propan yonishi", "C3H8 + O2 -> CO2 + H2O"),
+    ("Kontakt jarayoni", "SO2(g) + O2(g) <=> SO3(g)"),
+    ("Cho'kma tushishi", "NaCl(aq) + AgNO3(aq) -> AgCl(s) + NaNO3(aq)"),
+    ("Ionli oksidlanish-qaytarilish", "MnO4- + Fe2+ + H+ -> Mn2+ + Fe3+ + H2O"),
 )
 
 
@@ -128,7 +128,7 @@ def keyboard(target_key: str, conditions_key: str | None = None) -> None:
             arrow, not inside a formula, so they never touch the equation.
     """
     st.session_state.setdefault(target_key, "")
-    tab_names = [group.name for group in GROUPS] + (["Catalysts"] if conditions_key else [])
+    tab_names = [group.name for group in GROUPS] + (["Katalizatorlar"] if conditions_key else [])
     tabs = st.tabs(tab_names)
 
     for tab, group in zip(tabs, GROUPS):
@@ -145,7 +145,7 @@ def keyboard(target_key: str, conditions_key: str | None = None) -> None:
 
     if conditions_key:
         with tabs[-1]:
-            st.caption("Conditions are recorded beside the equation, not inside a formula.")
+            st.caption("Sharoitlar formula ichida emas, balki tenglama yonida yoziladi.")
             st.session_state.setdefault(conditions_key, "")
             _key_grid(
                 CONDITION_KEYS,
@@ -156,11 +156,11 @@ def keyboard(target_key: str, conditions_key: str | None = None) -> None:
 
     edit_columns = st.columns(3)
     with edit_columns[0]:
-        st.button("⌫ Backspace", key="kb-back", on_click=_backspace, args=(target_key,))
+        st.button("⌫ O'chirish", key="kb-back", on_click=_backspace, args=(target_key,))
     with edit_columns[1]:
-        st.button("Space", key="kb-space", on_click=_append, args=(target_key, " "))
+        st.button("Bo'sh joy", key="kb-space", on_click=_append, args=(target_key, " "))
     with edit_columns[2]:
-        st.button("Clear", key="kb-clear", on_click=_clear, args=(target_key,))
+        st.button("Tozalash", key="kb-clear", on_click=_clear, args=(target_key,))
 
 
 def _append_condition(conditions_key: str, token: str) -> None:
@@ -193,10 +193,10 @@ def _key_grid(
 def live_preview(text: str) -> None:
     """Show the typeset version of what is currently typed."""
     if not text.strip():
-        st.caption("Nothing typed yet. Use the keys above, or type directly.")
+        st.caption("Hali hech narsa yozilmadi. Yuqoridagi tugmalardan foydalaning yoki bevosita kiriting.")
         return
     st.markdown(
-        f'<div class="equation-card is-muted"><div class="label">Reads as</div>'
+        f'<div class="equation-card is-muted"><div class="label">Shunday o\'qiladi</div>'
         f'<div class="formula">{to_display(text)}</div></div>',
         unsafe_allow_html=True,
     )
@@ -204,7 +204,7 @@ def live_preview(text: str) -> None:
 
 def example_picker(target_key: str, columns: int = 4) -> None:
     """Buttons that load worked examples into the equation box."""
-    st.caption("Or start from an example:")
+    st.caption("Yoki misollardan boshlang:")
     for start in range(0, len(EXAMPLES), columns):
         row = EXAMPLES[start: start + columns]
         slots = st.columns(columns)

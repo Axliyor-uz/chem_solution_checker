@@ -114,12 +114,12 @@ def to_rows() -> list[dict[str, Any]]:
     """Flat rows for a table or CSV export."""
     return [
         {
-            "Checked at": entry.when,
-            "Typed": entry.source,
-            "Read as": entry.equation,
-            "Balanced": entry.balanced,
-            "Result": entry.status,
-            "Reaction types": ", ".join(entry.reaction_types),
+            "Tekshirilgan vaqti": entry.when,
+            "Kiritilgan": entry.source,
+            "Tenglama": entry.equation,
+            "Tenglashtirilgan": entry.balanced,
+            "Holati": entry.status,
+            "Reaksiya turlari": ", ".join(entry.reaction_types),
         }
         for entry in _store()
     ]

@@ -53,16 +53,16 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
     steps.append(
         Step(
             number=1,
-            title="Count the atoms on each side",
-            body="Multiply every subscript by the coefficient in front of its formula, "
-            "then total each element.",
+            title="Har ikki tomondagi atomlarni sanang",
+            body="Har bir indeksni uning formulasi oldidagi koeffitsiyentga ko'paytiring, "
+            "so'ngra har bir element bo'yicha yig'indini hisoblang.",
             rows=original_rows,
             equation=equation.display,
             lines=[
                 f"{side}: " + ", ".join(f"{symbol} × {count}" for symbol, count in sorted(totals.items()))
                 for side, totals in (
-                    ("Reactants", count_side(equation.reactants)),
-                    ("Products", count_side(equation.products)),
+                    ("Reaktivlar", count_side(equation.reactants)),
+                    ("Mahsulotlar", count_side(equation.products)),
                 )
             ],
         )
@@ -72,9 +72,9 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
         steps.append(
             Step(
                 number=2,
-                title="Compare the two columns",
-                body="Every element already has the same total on both sides, and the "
-                "coefficients share no common factor. Nothing needs changing.",
+                title="Ikkala ustunni taqqoslang",
+                body="Har bir element allaqachon ikkala tomonda bir xil yig'indiga ega va "
+                "koeffitsiyentlar umumiy bo'luvchiga ega emas. Hech narsani o'zgartirish kerak emas.",
                 lines=[f"{row.element}: {row.left} = {row.right}" for row in original_rows],
             )
         )
@@ -84,15 +84,15 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
     steps.append(
         Step(
             number=2,
-            title="Find what does not match",
-            body="Only the elements whose totals differ need attention. Everything else "
-            "is already satisfied and must stay that way.",
+            title="Nimasi mos kelmasligini toping",
+            body="Faqat yig'indisi farq qiladigan elementlarga e'tibor qaratish kerak. Qolgan hamma narsa "
+            "allaqachon to'g'ri va xuddi shunday qolishi kerak.",
             lines=[
-                f"{row.element}: {row.left} on the left, {row.right} on the right "
+                f"{row.element}: chapda {row.left} ta, o'ngda {row.right} ta "
                 f"→ {row.short_note}"
                 for row in unbalanced
             ]
-            or ["Every element matches; only the overall factor is wrong."],
+            or ["Barcha elementlar mos keladi; faqat umumiy ko'paytuvchi xato."],
         )
     )
 
@@ -100,7 +100,7 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
         steps.append(
             Step(
                 number=3,
-                title="Why this cannot be finished",
+                title="Nima uchun buni yakunlab bo'lmaydi",
                 body=result.message,
                 lines=[],
             )
@@ -118,9 +118,9 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
     steps.append(
         Step(
             number=3,
-            title="Write one conservation equation per element",
-            body="Replace each coefficient with an unknown. Every element gives a linear "
-            "equation, because its atoms cannot be created or destroyed.",
+            title="Har bir element uchun bittadan saqlanish tenglamasini yozing",
+            body="Har bir koeffitsiyentni noma'lum bilan almashtiring. Har bir element bitta chiziqli "
+            "tenglama beradi, chunki uning atomlari yo'qolib ketmaydi yoki o'z-o'zidan paydo bo'lmaydi.",
             equation=f"{labelled} → {labelled_right}",
             lines=_conservation_lines(equation, symbols),
         )
@@ -129,9 +129,9 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
     steps.append(
         Step(
             number=4,
-            title="Solve for the smallest whole numbers",
-            body="The system is solved together, then divided by the highest common "
-            "factor so the answer is in lowest terms.",
+            title="Eng kichik butun sonlarni toping",
+            body="Tizim birgalikda yechiladi, so'ngra javob eng qisqargan ko'rinishda "
+            "bo'lishi uchun eng katta umumiy bo'luvchiga bo'linadi.",
             lines=[
                 f"{symbol} = {value}"
                 for symbol, value in zip(symbols, result.coefficients)
@@ -144,9 +144,9 @@ def build_steps(equation: Equation, result: BalanceResult) -> list[Step]:
         steps.append(
             Step(
                 number=5,
-                title="Check the balanced equation",
-                body="Recount with the new coefficients. Both columns now agree, "
-                "which is the definition of balanced.",
+                title="Tenglashtirilgan tenglamani tekshiring",
+                body="Yangi koeffitsiyentlar bilan qayta sanang. Ikkala ustun endi mos keladi, "
+                "bu tenglashtirilganlikning ta'rifidir.",
                 rows=build_table(result.equation),
                 equation=result.equation.display,
             )
@@ -181,27 +181,27 @@ def _conservation_lines(equation: Equation, symbols: list[str]) -> list[str]:
             for index, item in enumerate(equation.species)
             if index >= split and item.formula.charge
         ]
-        lines.append(f"charge:  {' + '.join(left_terms)}  =  {' + '.join(right_terms)}")
+        lines.append(f"zaryad:  {' + '.join(left_terms)}  =  {' + '.join(right_terms)}")
     return lines
 
 
 def _charge_step(number: int, equation: Equation) -> Step:
     left = charge_of_side(equation.reactants)
     right = charge_of_side(equation.products)
-    verdict = "matches" if left == right else "does not match"
+    verdict = "mos keladi" if left == right else "mos kelmaydi"
     return Step(
         number=number,
-        title="Check the charge",
-        body=f"Net charge {verdict}: {left:+d} on the left, {right:+d} on the right. "
-        "In an ionic equation charge is conserved alongside atoms.",
+        title="Zaryadni tekshiring",
+        body=f"Umumiy zaryad {verdict}: chapda {left:+d}, o'ngda {right:+d}. "
+        "Ionli tenglamada zaryad atomlar bilan birga saqlanib qoladi.",
     )
 
 
 def _final_step(number: int, equation: Equation) -> Step:
     return Step(
         number=number,
-        title="Nothing left to do",
-        body="The equation is balanced as written.",
+        title="Qiladigan boshqa ish qolmadi",
+        body="Tenglama yozilganidek tenglashtirilgan.",
         equation=equation.display,
     )
 
@@ -213,15 +213,14 @@ def tutor_notes(equation: Equation, result: BalanceResult) -> list[tuple[str, st
     """``(heading, explanation)`` pairs about this particular equation."""
     notes: list[tuple[str, str]] = [
         (
-            "Why coefficients and never subscripts",
-            "Changing a subscript changes the substance: H₂O is water, H₂O₂ is hydrogen "
-            "peroxide. Coefficients only change how many molecules you have, which is the "
-            "one thing you are free to choose.",
+            "Nima uchun indekslar emas, doim koeffitsiyentlar",
+            "Indeksni o'zgartirish moddani o'zgartiradi: H₂O suv, H₂O₂ vodorod peroksidi. "
+            "Koeffitsiyentlar faqat nechta molekula borligini o'zgartiradi, bu esa siz erkin tanlay oladigan yagona narsadir.",
         ),
         (
-            "What balancing actually claims",
-            "Atoms are rearranged, not created. That single fact is why the totals must "
-            "agree, and why the mass on each side comes out the same.",
+            "Tenglashtirish aslida nimani anglatadi",
+            "Atomlar qayta taqsimlanadi, yangidan yaratilmaydi. Aynan shu bitta fakt nima uchun yig'indilar "
+            "mos kelishi kerakligini va nima uchun har ikki tomondagi massa bir xil chiqishini tushuntiradi.",
         ),
     ]
 
@@ -230,9 +229,9 @@ def tutor_notes(equation: Equation, result: BalanceResult) -> list[tuple[str, st
         listed = ", ".join(shared_ions)
         notes.append(
             (
-                "Balance these groups as one unit",
-                f"{listed} passes through the reaction unchanged. Counting it as a single "
-                "block instead of separate atoms saves several steps.",
+                "Bu guruhlarni bir butun sifatida tenglashtiring",
+                f"{listed} reaksiyadan o'zgarmasdan o'tadi. Uni alohida atomlar sifatida emas, "
+                "balki yaxlit bir blok sifatida hisoblash bir necha qadamni tejaydi.",
             )
         )
 
@@ -241,7 +240,7 @@ def tutor_notes(equation: Equation, result: BalanceResult) -> list[tuple[str, st
         primary = types[0].name
         strategy = _STRATEGY_BY_TYPE.get(primary)
         if strategy:
-            notes.append((f"Strategy for a {primary.lower()} reaction", strategy))
+            notes.append((f"{primary.lower()} reaksiyasi uchun strategiya".capitalize(), strategy))
 
     oxygen_odd = any(
         item.formula.composition.get("O", 0) % 2 == 1
@@ -251,37 +250,36 @@ def tutor_notes(equation: Equation, result: BalanceResult) -> list[tuple[str, st
     if oxygen_odd and any(item.formula.composition == {"O": 2} for item in equation.reactants):
         notes.append(
             (
-                "The odd-oxygen trick",
-                "An odd number of oxygens on the right cannot come from O₂ alone. Allow "
-                "yourself a fraction such as 3/2 O₂, finish the balance, then double every "
-                "coefficient to clear it.",
+                "Toq kislorod usuli",
+                "O'ng tomondagi toq sondagi kislorod faqat O₂ dan kelib chiqa olmaydi. O'zingizga "
+                "3/2 O₂ kabi kasr sonni ishlatishga ruxsat bering, tenglashtirishni tugating va "
+                "uni yo'qotish uchun har bir koeffitsiyentni ikkiga ko'paytiring.",
             )
         )
 
     if result.status == "underdetermined":
         notes.append(
             (
-                "Why there is more than one answer",
-                "Two independent reactions have been written as one line, so the coefficients "
-                "have a free parameter. Separate them and each becomes unique.",
+                "Nima uchun bittadan ko'p javob bor",
+                "Ikkita mustaqil reaksiya bitta qator qilib yozilgan, shuning uchun koeffitsiyentlarda "
+                "erkin parametr bor. Ularni ajrating, shunda har biri yagona javobga ega bo'ladi.",
             )
         )
     return notes
 
 
 _STRATEGY_BY_TYPE: Final[dict[str, str]] = {
-    "Combustion": "Balance carbon first, then hydrogen, and leave oxygen for last — "
-    "oxygen appears in two products, so fixing it first only undoes itself.",
-    "Neutralisation (acid–base)": "Balance the metal, then the acid's anion as a unit, "
-    "and let water absorb the leftover hydrogen and oxygen.",
-    "Double displacement": "Treat each polyatomic ion as a block that swaps partners "
-    "intact; only the two cations really move.",
-    "Single displacement": "Balance the element that moves first, then the spectator anion.",
-    "Decomposition": "Start from the single reactant: whatever it contains has to reappear, "
-    "distributed among the products.",
-    "Synthesis": "Work backwards from the single product, since it fixes every ratio.",
-    "Redox": "If coefficients resist, split the equation into oxidation and reduction "
-    "half-reactions, balance electrons, then recombine.",
+    "Yonish": "Avval uglerodni, so'ngra vodorodni tenglashtiring va kislorodni oxiriga qoldiring — "
+    "kislorod ikkita mahsulotda uchraydi, shuning uchun uni birinchi bo'lib to'g'rilash faqat qilingan ishni yo'qqa chiqaradi.",
+    "Neytrallanish (kislota-asos)": "Metalni, so'ngra kislota anionini bir butun sifatida tenglashtiring, "
+    "suv esa qolgan vodorod va kislorodni o'zlashtiradi.",
+    "Ikki tomonlama o'rin olish": "Har bir ko'patomli ionni hamkorini o'zgartiruvchi butun bir blok sifatida qarating; "
+    "faqat ikkita kation o'rin almashadi.",
+    "O'rin olish": "Avval o'rnini o'zgartirgan elementni, keyin esa tomoshabin anionni tenglashtiring.",
+    "Parchalanish": "Yagona reaktivdan boshlang: u nimadan iborat bo'lsa, mahsulotlar orasida taqsimlanishi kerak.",
+    "Birlashish": "Yagona mahsulotdan orqaga qarab ishlang, chunki u barcha nisbatlarni belgilab beradi.",
+    "Oksidlanish-qaytarilish": "Agar koeffitsiyentlarni topish qiyin bo'lsa, tenglamani oksidlanish va qaytarilish "
+    "yarim reaksiyalariga ajrating, elektronlarni tenglashtiring, keyin qayta birlashtiring.",
 }
 
 
@@ -301,17 +299,17 @@ def _intact_ions(equation: Equation) -> list[str]:
 def common_mistakes(equation: Equation) -> list[str]:
     """Mistakes a student is likely to make on this specific equation."""
     mistakes: list[str] = [
-        "Editing a subscript to force the numbers to work — that writes a different compound.",
-        "Stopping at the first element that balances instead of rechecking the others.",
+        "Raqamlarni moslashtirish uchun indeksni o'zgartirish — bu butunlay boshqa birikmani anglatadi.",
+        "Boshqalarini qayta tekshirish o'rniga, tenglashgan birinchi elementda to'xtab qolish.",
     ]
     if any(item.formula.composition.get("O", 0) for item in equation.products):
-        mistakes.append("Balancing oxygen early, then breaking it again while fixing hydrogen.")
+        mistakes.append("Kislorodni erta tenglashtirib qo'yish, keyin vodorodni to'g'rilash jarayonida uni yana buzish.")
     if _intact_ions(equation):
-        mistakes.append("Splitting a polyatomic ion into separate atoms and losing track of it.")
+        mistakes.append("Ko'patomli ionni alohida atomlarga ajratib yuborish va uni yo'qotib qo'yish.")
     if equation.has_charges:
-        mistakes.append("Balancing the atoms but forgetting that charge also has to match.")
+        mistakes.append("Atomlarni tenglashtirish, ammo zaryad ham mos kelishi kerakligini unutish.")
     if len(equation.species) > 4:
-        mistakes.append("Leaving the answer with a common factor still in it, such as 2:4:2.")
+        mistakes.append("Javobda hali ham umumiy bo'luvchi qolib ketishi, masalan 2:4:2.")
     return mistakes
 
 
@@ -320,12 +318,12 @@ def hints(equation: Equation, result: BalanceResult) -> list[str]:
     rows = build_table(equation)
     unbalanced = [row for row in rows if not row.balanced]
     if not unbalanced:
-        return ["Every element already matches — check whether the coefficients share a factor."]
+        return ["Barcha elementlar allaqachon mos keladi — koeffitsiyentlarda umumiy bo'luvchi bor-yo'qligini tekshiring."]
 
     first = unbalanced[0]
     steps = [
-        f"Start with {first.element}. Count it carefully on both sides before touching anything.",
-        f"{first.element}: {first.left} on the left, {first.right} on the right — "
+        f"{first.element} dan boshlang. Biror narsani o'zgartirishdan oldin uni ikkala tomonda ehtiyotkorlik bilan sanab chiqing.",
+        f"{first.element}: chapda {first.left} ta, o'ngda {first.right} ta — "
         f"{first.short_note}.",
     ]
     if result.succeeded and result.equation:
@@ -345,9 +343,9 @@ def hints(equation: Equation, result: BalanceResult) -> list[str]:
         ]
         if relevant or changes:
             display, value = (relevant or changes)[0]
-            steps.append(f"Try changing the coefficient in front of {display}.")
-            steps.append(f"{display} needs a coefficient of {value}.")
-        steps.append(f"The balanced equation is {result.equation.display}.")
+            steps.append(f"{display} oldidagi koeffitsiyentni o'zgartirib ko'ring.")
+            steps.append(f"{display} ga {value} koeffitsiyent kerak.")
+        steps.append(f"Tenglashtirilgan tenglama: {result.equation.display}.")
     return steps
 
 
@@ -358,12 +356,12 @@ def error_report(equation: Equation, result: BalanceResult) -> list[str]:
         if row.balanced:
             continue
         lines.append(
-            f"{row.element} atoms are not balanced. Left side {row.left}, "
-            f"right side {row.right}."
+            f"{row.element} atomlari tenglashmagan. Chap tomonda {row.left}, "
+            f"o'ng tomonda {row.right}."
         )
     if result.succeeded and result.equation:
         for display, before, after in result.changes:
-            lines.append(f"The coefficient before {display} should become {after} (currently {before}).")
+            lines.append(f"{display} oldidagi koeffitsiyent {after} bo'lishi kerak (hozir {before}).")
     elif result.message:
         lines.append(result.message)
     return lines
@@ -415,15 +413,15 @@ def ask_ai_tutor(
     import requests  # Imported lazily so the app runs without network libraries.
 
     style = (
-        "Give one hint that moves the student forward by a single step. "
-        "Do not state the balanced equation or the final coefficients."
+        "O'quvchini bir qadam oldinga siljitadigan bitta ishora bering. "
+        "Tenglashtirilgan tenglamani yoki yakuniy koeffitsiyentlarni aytmang."
         if practice_mode
-        else "Explain clearly and completely, showing the reasoning."
+        else "Fikrlash jarayonini ko'rsatgan holda, aniq va to'liq tushuntiring."
     )
     system = (
-        "You are a chemistry tutor for high school and first-year university students. "
-        "The verified analysis below comes from a symbolic checker and is correct — "
-        "never contradict it. Be concise, concrete, and use the student's own equation. "
+        "Siz o'rta maktab va universitetning birinchi bosqich talabalari uchun kimyo o'qituvchisisiz. "
+        "Quyidagi tasdiqlangan tahlil simvolik tekshiruvchidan olingan va u to'g'ri — "
+        "hech qachon unga qarshi chiqmang. Qisqa, aniq bo'ling va o'quvchining o'z tenglamasidan foydalaning. "
         f"{style}"
     )
     try:
@@ -441,7 +439,7 @@ def ask_ai_tutor(
                 "messages": [
                     {
                         "role": "user",
-                        "content": f"Verified analysis:\n{context}\n\nStudent asks: {question}",
+                        "content": f"Tasdiqlangan tahlil:\n{context}\n\nO'quvchining savoli: {question}",
                     }
                 ],
             },
@@ -453,5 +451,5 @@ def ask_ai_tutor(
             block.get("text", "") for block in payload.get("content", []) if block.get("type") == "text"
         ).strip()
     except Exception as error:  # noqa: BLE001 - surfaced to the student, not swallowed
-        return f"The AI tutor is unavailable right now ({error.__class__.__name__}). " \
-               "The worked steps and notes on this page do not need it."
+        return f"Ayni paytda AI o'qituvchi mavjud emas ({error.__class__.__name__}). " \
+               "Ushbu sahifadagi batafsil yechim va eslatmalar usiz ham ishlaydi."
