@@ -40,10 +40,10 @@ def _api_key() -> str:
     return str(secret or os.environ.get("ANTHROPIC_API_KEY", ""))
 
 page_header(
-    "Tenglamalar tekshiruvi",
-    "Reaksiyani yozing va har bir element massasi hisoblanadi. "
-    "Agar u tenglashmasa, qaysi koeffitsiyent o'zgarishi kerakligi aytiladi.",
-    eyebrow="Tekshirish · Tenglashtirish · Tushuntirish",
+    "Equation checker",
+    "Type a reaction, and every element gets weighed against itself. "
+    "Where it does not balance, the coefficient that has to change is named.",
+    eyebrow="Check · Balance · Explain",
 )
 
 st.session_state.setdefault(INPUT_KEY, "H2 + O2 -> H2O")
@@ -53,17 +53,19 @@ left, right = st.columns([3, 2], gap="large")
 
 with left:
     st.text_area(
-        "Tenglama",
+        "Equation",
         key=INPUT_KEY,
         height=88,
         label_visibility="collapsed",
         placeholder="H2 + O2 -> H2O",
     )
     keys.live_preview(st.session_state[INPUT_KEY])
+    solve_clicked = st.button("Solve", type="primary")
+    st.caption("Click Solve to check the equation.")
     practice_mode = st.toggle(
-        "Amaliyot rejimi",
+        "Practice mode",
         value=False,
-        help="Javobni yashirish va birma-bir ishora berish.",
+        help="Hold back the answer and give one hint at a time.",
     )
 
 with right:
@@ -71,20 +73,20 @@ with right:
 
 keys.example_picker(INPUT_KEY)
 
-with st.expander("Reaksiya sharoitlari (ixtiyoriy)"):
+with st.expander("Reaction conditions (optional)"):
     condition_columns = st.columns(3)
     with condition_columns[0]:
-        st.text_input("Katalizator va sharoitlar", key=CONDITIONS_KEY, placeholder="V2O5, Δ")
+        st.text_input("Catalyst and conditions", key=CONDITIONS_KEY, placeholder="V2O5, Δ")
     with condition_columns[1]:
-        temperature = st.text_input("Harorat", placeholder="450 °C")
+        temperature = st.text_input("Temperature", placeholder="450 °C")
     with condition_columns[2]:
-        pressure = st.text_input("Bosim", placeholder="2 atm")
+        pressure = st.text_input("Pressure", placeholder="2 atm")
 
 st.divider()
 
 source = st.session_state[INPUT_KEY].strip()
 if not source:
-    st.info("Yuqoriga tenglama yozing yoki misollardan birini tanlang.")
+    st.info("Type an equation above, or pick one of the examples.")
     st.stop()
 
 report = equation_validator.validate(source)
@@ -106,16 +108,16 @@ verdict_columns = st.columns([3, 2], gap="large")
 
 with verdict_columns[0]:
     if not equation:
-        equation_card(source, label="Buni o'qib bo'lmadi", variant="is-error")
+        equation_card(source, label="Could not read this", variant="is-error")
     else:
-        equation_card(equation.display, label="Siz yozganingizdek")
+        equation_card(equation.display, label="As you wrote it")
         if balance and balance.succeeded and balance.equation:
             if practice_mode and balance.status != "already_balanced":
-                st.caption("Amaliyot rejimi yoqilgan, shuning uchun tenglashtirilgan tenglama yashiringan.")
+                st.caption("Practice mode is on, so the balanced equation is hidden.")
             else:
                 equation_card(
                     balance.equation.display,
-                    label="Tenglashtirilgan" if balance.status != "already_balanced" else "Allaqachon tenglashtirilgan",
+                    label="Balanced" if balance.status != "already_balanced" else "Already balanced",
                 )
 
 with verdict_columns[1]:
@@ -124,16 +126,16 @@ with verdict_columns[1]:
         rows = report.rows
         stats(
             [
-                ("Moddalar", str(len(equation.species))),
-                ("Elementlar", str(len(equation.elements))),
-                ("Tenglashtirilgan", "ha" if all(row.balanced for row in rows) else "yo'q"),
-                ("Kirish massasi", f"{format_number(left_mass, 2)}"),
-                ("Chiqish massasi", f"{format_number(right_mass, 2)}"),
+                ("Species", str(len(equation.species))),
+                ("Elements", str(len(equation.elements))),
+                ("Balanced", "yes" if all(row.balanced for row in rows) else "no"),
+                ("Mass in", f"{format_number(left_mass, 2)}"),
+                ("Mass out", f"{format_number(right_mass, 2)}"),
             ]
         )
 
 if equation:
-    st.markdown("#### Muvozanat")
+    st.markdown("#### The balance")
     charges = (
         (charge_of_side(equation.reactants), charge_of_side(equation.products))
         if equation.has_charges
@@ -141,7 +143,7 @@ if equation:
     )
     balance_ledger(report.rows, charges)
 
-st.markdown("#### Tekshiruvchi nimani aniqladi")
+st.markdown("#### What the checker found")
 findings(report.sorted_issues)
 
 if not equation:
@@ -157,31 +159,31 @@ history.record(
 )
 
 tab_steps, tab_type, tab_tutor, tab_export = st.tabs(
-    ["Batafsil yechim", "Reaksiya turi", "O'qituvchi", "Eksport"]
+    ["Worked solution", "Reaction type", "Tutor", "Export"]
 )
 
 with tab_steps:
     if practice_mode:
-        st.caption("Birma-bir ishora. Faqat keraklilarini oching.")
+        st.caption("One hint at a time. Reveal only as many as you need.")
         hint_list = hints(equation, balance)
         for index, hint in enumerate(hint_list, start=1):
             last = index == len(hint_list) and len(hint_list) > 1
-            with st.expander("Javobni ko'rsatish" if last else f"{index}-ishora"):
+            with st.expander("Show the answer" if last else f"Hint {index}"):
                 st.write(hint)
     elif steps:
         steps_view(steps)
     else:
-        st.info("Bu kiritish uchun ko'rsatiladigan qadamlar yo'q.")
+        st.info("No steps to show for this input.")
 
 with tab_type:
     types = classify(equation)
     if not types:
-        st.info("Bu standart reaksiya oilasiga to'g'ri kelmaydi.")
+        st.info("This does not match a standard reaction family.")
     for item in types:
         st.markdown(f"**{item.name}** · {item.confidence_label}")
         st.caption(item.evidence)
     if equation.conditions:
-        st.markdown("**Qayd etilgan sharoitlar**")
+        st.markdown("**Conditions recorded**")
         for name, value in equation.conditions.items():
             st.caption(f"{name.capitalize()}: {value}")
 
@@ -190,24 +192,24 @@ with tab_tutor:
         for heading, text in tutor_notes(equation, balance):
             st.markdown(f"**{heading}**")
             st.caption(text)
-        st.markdown("**Odatda bu yerda xato qilinadi**")
+        st.markdown("**Where this one usually goes wrong**")
         for mistake in common_mistakes(equation):
             st.caption(f"· {mistake}")
 
     st.divider()
     api_key = _api_key()
     question = st.text_input(
-        "Bu tenglama haqida so'rang",
-        placeholder="Nima uchun kislorod oxirida tenglashtiriladi?",
+        "Ask about this equation",
+        placeholder="Why does oxygen get balanced last?",
     )
     if question:
         if not api_key:
             st.info(
-                "AI o'qituvchini yoqish uchun Streamlit sirlariga ANTHROPIC_API_KEY qo'shing. "
-                "Bu sahifadagi qolgan hamma narsa usiz ham ishlaydi."
+                "Add an ANTHROPIC_API_KEY to Streamlit secrets to enable the AI tutor. "
+                "Everything else on this page works without it."
             )
         elif balance:
-            with st.spinner("O'ylamoqda…"):
+            with st.spinner("Thinking…"):
                 st.write(
                     ask_ai_tutor(
                         question,
@@ -218,7 +220,7 @@ with tab_tutor:
                 )
 
 with tab_export:
-    st.caption("Bu natijani o'zingiz bilan oling.")
+    st.caption("Take this result with you.")
     export_columns = st.columns(4)
     with export_columns[0]:
         st.download_button(

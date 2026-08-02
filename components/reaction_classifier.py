@@ -40,11 +40,11 @@ class ReactionType:
 
     @property
     def confidence_label(self) -> str:
-        if self.confidence > 0.8:
-            return "Katta ehtimol bilan"
-        if self.confidence > 0.5:
-            return "Ehtimoli bor"
-        return "Mumkin"
+        if self.confidence >= 0.85:
+            return "clear"
+        if self.confidence >= 0.6:
+            return "likely"
+        return "possible"
 
 
 def is_metal(symbol: str) -> bool:
@@ -102,17 +102,18 @@ def classify(equation: Equation) -> list[ReactionType]:
     if len(products) == 1 and len(reactants) >= 2:
         found.append(
             ReactionType(
-                name="Birlashish",
-                evidence=f"{len(reactants)} ta reaktiv birlashib, bitta {products[0].formula.display} mahsulotini hosil qiladi.",
-                confidence=0.95,
+                "Synthesis",
+                f"{len(reactants)} reactants combine into the single product "
+                f"{products[0].formula.display}.",
+                0.95,
             )
         )
     if len(reactants) == 1 and len(products) >= 2:
         found.append(
             ReactionType(
-                name="Parchalanish",
-                evidence=f"{reactants[0].formula.display} parchalanib, {len(products)} ta mahsulot hosil qiladi.",
-                confidence=0.95,
+                "Decomposition",
+                f"{reactants[0].formula.display} breaks apart into {len(products)} products.",
+                0.95,
             )
         )
 
@@ -123,15 +124,15 @@ def classify(equation: Equation) -> list[ReactionType]:
     if oxygen_reactant and fuel and (makes_co2 or makes_water):
         found.append(
             ReactionType(
-                "Yonish",
-                f"{fuel[0].formula.display} O₂ da yonib "
-                f"{'CO₂ va H₂O' if makes_co2 and makes_water else 'oksidlar'} hosil qiladi.",
+                "Combustion",
+                f"{fuel[0].formula.display} burns in O₂ to give "
+                f"{'CO₂ and H₂O' if makes_co2 and makes_water else 'oxides'}.",
                 0.95,
             )
         )
     elif oxygen_reactant and len(products) == 1:
         found.append(
-            ReactionType("Yonish", "Element O₂ da yonib, o'z oksidini hosil qiladi.", 0.7)
+            ReactionType("Combustion", "An element burns in O₂ to form its oxide.", 0.7)
         )
 
     acids = [s for s in reactants if is_acid(s)]
@@ -140,9 +141,9 @@ def classify(equation: Equation) -> list[ReactionType]:
         confidence = 0.95 if makes_water else 0.7
         found.append(
             ReactionType(
-                "Neytrallanish (kislota-asos)",
-                f"{acids[0].formula.display} {bases[0].formula.display} bilan reaksiyaga kirishib"
-                + (" tuz va suv hosil qiladi." if makes_water else "."),
+                "Neutralisation (acid–base)",
+                f"{acids[0].formula.display} reacts with {bases[0].formula.display}"
+                + (" to give a salt and water." if makes_water else "."),
                 confidence,
             )
         )
@@ -150,8 +151,8 @@ def classify(equation: Equation) -> list[ReactionType]:
                        if s.formula.is_single_element):
         found.append(
             ReactionType(
-                "Kislota-metall reaksiyasi",
-                f"{acids[0].formula.display} erkin metall bilan reaksiyaga kirishib, H₂ ajratib chiqaradi.",
+                "Acid–metal reaction",
+                f"{acids[0].formula.display} attacks a free metal, releasing H₂.",
                 0.8,
             )
         )
@@ -159,9 +160,9 @@ def classify(equation: Equation) -> list[ReactionType]:
     if len(free_left) == 1 and len(free_right) == 1 and len(reactants) == 2 == len(products):
         found.append(
             ReactionType(
-                "O'rin olish",
-                f"Birikmada {free_left[0].formula.display} ning o'rnini "
-                f"{free_right[0].formula.display} egallaydi.",
+                "Single displacement",
+                f"{free_left[0].formula.display} takes the place of "
+                f"{free_right[0].formula.display} in the compound.",
                 0.9,
             )
         )
@@ -173,8 +174,8 @@ def classify(equation: Equation) -> list[ReactionType]:
     ):
         found.append(
             ReactionType(
-                "Ikki tomonlama o'rin olish",
-                "Ikkita birikma hamkorlarini o'zaro almashadi.",
+                "Double displacement",
+                "The two compounds exchange partners.",
                 0.85 if not (acids and bases) else 0.6,
             )
         )
@@ -183,8 +184,8 @@ def classify(equation: Equation) -> list[ReactionType]:
     if precipitate and any(s.state == "aq" for s in reactants):
         found.append(
             ReactionType(
-                "Cho'kma tushishi",
-                f"{precipitate[0].formula.display} eritmadan qattiq modda sifatida ajralib chiqadi.",
+                "Precipitation",
+                f"{precipitate[0].formula.display} leaves solution as a solid.",
                 0.9,
             )
         )
@@ -192,8 +193,8 @@ def classify(equation: Equation) -> list[ReactionType]:
     if gases and not (oxygen_reactant and fuel):
         found.append(
             ReactionType(
-                "Gaz ajralishi",
-                f"{gases[0].formula.display} gaz sifatida ajralib chiqadi.",
+                "Gas evolution",
+                f"{gases[0].formula.display} is released as a gas.",
                 0.75 if gases[0].state == "g" else 0.5,
             )
         )
@@ -205,8 +206,8 @@ def classify(equation: Equation) -> list[ReactionType]:
     if equation.reversible:
         found.append(
             ReactionType(
-                "Muvozanat",
-                "⇌ bilan yozilgan, shuning uchun reaksiya ikkala yo'nalishda bir vaqtda boradi.",
+                "Equilibrium",
+                "Written with ⇌, so both directions run at once.",
                 0.99,
             )
         )
@@ -238,17 +239,17 @@ def _redox_evidence(
         symbol = next(iter(species.formula.composition))
         if symbol in combined_right:
             return ReactionType(
-                "Oksidlanish-qaytarilish",
-                f"{symbol} erkin element (oksidlanish darajasi 0) sifatida boshlanadi va oxirida birikmaga kiradi, "
-                "demak elektronlar ko'chgan.",
+                "Redox",
+                f"{symbol} starts as a free element (oxidation state 0) and ends up combined, "
+                "so electrons moved.",
                 0.9,
             )
     for species in free_right:
         symbol = next(iter(species.formula.composition))
         if symbol in combined_left:
             return ReactionType(
-                "Oksidlanish-qaytarilish",
-                f"{symbol} birikmadan erkin element sifatida ajralib chiqdi, demak elektronlar ko'chgan.",
+                "Redox",
+                f"{symbol} is released as a free element from a compound, so electrons moved.",
                 0.9,
             )
     charges = {
@@ -266,9 +267,9 @@ def _redox_evidence(
                 other.formula.charge != item.formula.charge
             ):
                 return ReactionType(
-                    "Oksidlanish-qaytarilish",
-                    f"{symbol} ning zaryadi {item.formula.charge:+d} dan "
-                    f"{other.formula.charge:+d} ga o'zgaradi.",
+                    "Redox",
+                    f"{symbol} changes charge from {item.formula.charge:+d} to "
+                    f"{other.formula.charge:+d}.",
                     0.95,
                 )
     return None if not charges else None
@@ -289,9 +290,9 @@ def summarise(equation: Equation) -> str:
     """One-line answer for the "what kind of reaction is this" question."""
     types = classify(equation)
     if not types:
-        return "Standart reaksiya turi aniqlanmadi."
+        return "No standard reaction type recognised."
     primary = types[0]
     if len(types) == 1:
-        return f"{primary.name} reaksiyasi."
+        return f"{primary.name} reaction."
     others = ", ".join(item.name for item in types[1:])
-    return f"{primary.name} reaksiyasi (shuningdek: {others})."
+    return f"{primary.name} reaction (also: {others})."

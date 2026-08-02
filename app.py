@@ -17,44 +17,44 @@ if str(ROOT) not in sys.path:
 from components.ui import inject_theme  # noqa: E402  (path set up above)
 
 st.set_page_config(
-    page_title="Kimyoviy Tenglamalar Tekshiruvi",
+    page_title="Chemistry Solution Checker",
     page_icon="⚗",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 PAGES = [
-    st.Page("pages/Equation_Checker.py", title="Tenglamalar tekshiruvi", icon="⚖️", default=True),
-    st.Page("pages/Stoichiometry.py", title="Stexiometriya", icon="🧮"),
-    st.Page("pages/Molar_Mass.py", title="Molyar massa", icon="⚗️"),
-    st.Page("pages/Periodic_Table.py", title="Davriy jadval", icon="🔬"),
-    st.Page("pages/Compound_Info.py", title="Birikma ma'lumoti", icon="🧪"),
-    st.Page("pages/History.py", title="Tarix", icon="🕘"),
+    st.Page("pages/Equation_Checker.py", title="Equation checker", icon="⚖️", default=True),
+    st.Page("pages/Stoichiometry.py", title="Stoichiometry", icon="🧮"),
+    st.Page("pages/Molar_Mass.py", title="Molar mass", icon="⚗️"),
+    st.Page("pages/Periodic_Table.py", title="Periodic table", icon="🔬"),
+    st.Page("pages/Compound_Info.py", title="Compound info", icon="🧪"),
+    st.Page("pages/History.py", title="History", icon="🕘"),
 ]
 
 
 def sidebar_reference() -> None:
     """Notation reminder, always within reach."""
     with st.sidebar:
-        st.markdown("### Qanday yoziladi")
+        st.markdown("### How to type it")
         st.markdown(
             """
-| Nazarda tutilgan | Yozish |
+| You mean | Type |
 | --- | --- |
 | H₂O | `H2O` |
 | Ca(OH)₂ | `Ca(OH)2` |
-| SO₄²⁻ | `SO4^2-` yoki `SO42-` |
+| SO₄²⁻ | `SO4^2-` or `SO42-` |
 | Fe³⁺ | `Fe3+` |
 | NH₄⁺ | `NH4+` |
 | CuSO₄·5H₂O | `CuSO4*5H2O` |
-| → | `->` yoki `=` |
+| → | `->` or `=` |
 | ⇌ | `<=>` |
-| holat | `(s) (l) (g) (aq)` |
+| state | `(s) (l) (g) (aq)` |
             """
         )
         st.caption(
-            "Klaviatura orqali yozilgan pastki va yuqori indekslar ham ishlaydi — "
-            "ular avtomatik aylantiriladi."
+            "Subscripts and superscripts from the keyboard work too — they are "
+            "converted for you."
         )
 
 

@@ -204,16 +204,16 @@ hr { border-color: var(--line); }
 """
 
 CATEGORY_COLORS: dict[str, str] = {
-    "ishqoriy metall": "#F0A028",
-    "ishqoriy-yer metall": "#D98A3A",
-    "o'tish metalli": "#37C4A6",
-    "o'tish metallidan keyingi metall": "#2E9C89",
+    "alkali metal": "#F0A028",
+    "alkaline earth metal": "#D98A3A",
+    "transition metal": "#37C4A6",
+    "post-transition metal": "#2E9C89",
     "metalloid": "#9A86F0",
-    "metallmas": "#5A8FD8",
-    "galogen": "#7BB3E8",
-    "asil gaz": "#B07BD8",
-    "lantanoid": "#E7515F",
-    "aktinoid": "#C4444F",
+    "nonmetal": "#5A8FD8",
+    "halogen": "#7BB3E8",
+    "noble gas": "#B07BD8",
+    "lanthanide": "#E7515F",
+    "actinide": "#C4444F",
 }
 
 
@@ -233,7 +233,7 @@ def page_header(title: str, subtitle: str, eyebrow: str = "") -> None:
     )
 
 
-def equation_card(text: str, label: str = "Tenglama", variant: str = "") -> None:
+def equation_card(text: str, label: str = "Equation", variant: str = "") -> None:
     """Show a formula or equation in the monospace display card."""
     css_class = f"equation-card {variant}".strip()
     st.markdown(
@@ -251,13 +251,13 @@ def balance_ledger(rows: Sequence[AtomRow], charges: tuple[int, int] | None = No
     uneven pair before any number is read.
     """
     if not rows:
-        st.caption("Hali tortish uchun atomlar yo'q.")
+        st.caption("No atoms to weigh yet.")
         return
     peak = max(max(row.left, row.right) for row in rows) or 1
     body = [
         '<div class="ledger"><div class="ledger-head">'
-        "<span>Element</span><span>Reaktivlar</span><span>Muvozanat</span>"
-        "<span>Mahsulotlar</span><span>Δ</span></div>"
+        "<span>Element</span><span>Reactants</span><span>Balance</span>"
+        "<span>Products</span><span>Δ</span></div>"
     ]
     for row in rows:
         left_pct = row.left / peak * 100
@@ -299,7 +299,7 @@ def findings(issues: Iterable[Issue]) -> None:
     """Render validator issues as a stack of cards."""
     for issue in issues:
         detail = f'<div class="detail">{html.escape(issue.detail)}</div>' if issue.detail else ""
-        fix = f'<div class="fix"><b>Tuzatish</b> — {html.escape(issue.fix)}</div>' if issue.fix else ""
+        fix = f'<div class="fix"><b>Fix</b> — {html.escape(issue.fix)}</div>' if issue.fix else ""
         st.markdown(
             f'<div class="finding {issue.level}"><div class="mark">{issue.icon}</div>'
             f'<div><div class="title">{html.escape(issue.title)}</div>{detail}{fix}</div></div>',

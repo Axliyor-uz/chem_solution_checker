@@ -13,7 +13,6 @@ from components.parser import Equation, Species
 from data.elements import ELEMENTS
 
 
-
 @dataclass(frozen=True, slots=True)
 class AtomRow:
     """One element's tally across the arrow."""
@@ -37,12 +36,10 @@ class AtomRow:
 
     @property
     def short_note(self) -> str:
-        """A three-word verdict for the explanation column."""
         if self.balanced:
-            return "mos keladi"
-        if self.left > self.right:
-            return f"chapda {self.left - self.right} ta ortiqcha"
-        return f"o'ngda {self.right - self.left} ta ortiqcha"
+            return "balanced"
+        surplus_side = "right" if self.difference > 0 else "left"
+        return f"{abs(self.difference)} extra on the {surplus_side}"
 
 
 def count_side(species: Iterable[Species]) -> dict[str, int]:

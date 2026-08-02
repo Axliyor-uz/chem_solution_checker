@@ -11,37 +11,37 @@ from utils import history
 INPUT_KEY = "equation_input"
 
 page_header(
-    "Tarix",
-    "Ushbu seansda tekshirilgan barcha tenglamalar, eng yengilari birinchi bo'lib. "
-    "Agar o'zingiz eksport qilmasangiz, hech narsa brauzerdan tashqariga chiqmaydi.",
-    eyebrow="Ushbu seans",
+    "History",
+    "Every equation checked in this session, newest first. Nothing leaves the "
+    "browser unless you export it.",
+    eyebrow="This session",
 )
 
 entries = history.all_entries()
 if not entries:
-    st.info("Hali hech narsa tekshirilmadi. Tenglamalar tekshiruvchisiga o'ting va birortasini sinab ko'ring.")
+    st.info("Nothing checked yet. Head to the equation checker and try one.")
     st.stop()
 
 balanced_count = sum(1 for entry in entries if entry.status.startswith("Balanced"))
 stats(
     [
-        ("Tekshirildi", str(len(entries))),
-        ("Tenglashtirilgan chiqdi", str(balanced_count)),
-        ("Ishlash kerak edi", str(len(entries) - balanced_count)),
+        ("Checked", str(len(entries))),
+        ("Came out balanced", str(balanced_count)),
+        ("Needed work", str(len(entries) - balanced_count)),
     ]
 )
 
 search_columns = st.columns([3, 1])
 with search_columns[0]:
-    term = st.text_input("Qidirish", placeholder="Fe, yonish, tenglashtirilmagan…", label_visibility="collapsed")
+    term = st.text_input("Search", placeholder="Fe, combustion, unbalanced…", label_visibility="collapsed")
 with search_columns[1]:
-    if st.button("Tarixni tozalash", width="stretch"):
+    if st.button("Clear history", width="stretch"):
         history.clear()
         st.rerun()
 
 results = history.search(term)
 if not results:
-    st.caption("Ushbu qidiruvga mos keladigan yozuvlar yo'q.")
+    st.caption("No entries match that search.")
 
 for entry in results:
     index = entries.index(entry)
@@ -50,7 +50,7 @@ for entry in results:
         with columns[0]:
             st.markdown(f"**{entry.equation}**")
             if entry.balanced and entry.balanced != "—" and entry.balanced != entry.equation:
-                st.caption(f"Tenglashtirilgan: {entry.balanced}")
+                st.caption(f"Balanced: {entry.balanced}")
             if entry.reaction_types:
                 st.caption(" · ".join(entry.reaction_types))
         with columns[1]:
@@ -58,17 +58,17 @@ for entry in results:
             st.caption(entry.status)
         with columns[2]:
             st.button(
-                "Qayta yuklash",
+                "Reload",
                 key=f"reload-{index}",
                 on_click=lambda value=entry.source: st.session_state.update({INPUT_KEY: value}),
                 width="stretch",
             )
-            if st.button("O'chirish", key=f"delete-{index}", width="stretch"):
+            if st.button("Delete", key=f"delete-{index}", width="stretch"):
                 history.delete(index)
                 st.rerun()
 
 st.divider()
-st.markdown("#### Eksport")
+st.markdown("#### Export")
 export_columns = st.columns(3)
 rows = history.to_rows()
 with export_columns[0]:
@@ -99,5 +99,5 @@ with export_columns[2]:
         width="stretch",
     )
 
-with st.expander("Jadval sifatida"):
+with st.expander("As a table"):
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)

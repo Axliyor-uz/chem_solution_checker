@@ -11,10 +11,10 @@ from data.elements import BY_NUMBER, ELEMENTS, Element, search
 from utils.formatting import format_number
 
 page_header(
-    "Davriy jadval",
-    "Har bir element elektronlar joylashishiga ko'ra tartiblangan. "
-    "Ma'lumotlarini ko'rish uchun katakchani bosing.",
-    eyebrow="118 ta element",
+    "Periodic table",
+    "Every element, laid out the way the electrons put it there. Click a cell to "
+    "see its numbers.",
+    eyebrow="118 elements",
 )
 
 selected_symbol = st.query_params.get("element", "H")
@@ -64,16 +64,16 @@ with detail_columns[0]:
         <div style="font-family:var(--display);font-size:1.15rem;margin-top:0.2rem">
         {html.escape(element.name)}</div>
         <div style="color:var(--muted);font-family:var(--mono);font-size:0.8rem;margin-top:0.3rem">
-        Z = {element.number} · {element.period}-davr ·
-        {element.group + "-guruh" if element.group else "f-blok"} ·
-        {element.block}-blok</div></div>""",
+        Z = {element.number} · period {element.period} ·
+        {"group " + str(element.group) if element.group else "f-block"} ·
+        {element.block}-block</div></div>""",
         unsafe_allow_html=True,
     )
-    finder = st.text_input("Element izlash", placeholder="temir, Fe yoki 26")
+    finder = st.text_input("Find an element", placeholder="iron, Fe or 26")
     if finder:
         matches = search(finder)[:12]
         if not matches:
-            st.caption("Hech narsa topilmadi.")
+            st.caption("Nothing matches that.")
         for match in matches:
             st.markdown(
                 f'<a href="?element={match.symbol}" target="_self" '
@@ -85,24 +85,24 @@ with detail_columns[0]:
 with detail_columns[1]:
     stats(
         [
-            ("Atom raqami", str(element.number)),
-            ("Atom massasi", f"{format_number(element.mass, 4)}"),
-            ("Valent elektronlari", str(element.valence_electrons) if element.valence_electrons else "—"),
-            ("Asosiy holati", f"{element.common_oxidation_state:+d}" if element.common_oxidation_state else "—"),
+            ("Atomic number", str(element.number)),
+            ("Atomic mass", f"{format_number(element.mass, 4)}"),
+            ("Valence electrons", str(element.valence_electrons) if element.valence_electrons else "—"),
+            ("Common state", f"{element.common_oxidation_state:+d}" if element.common_oxidation_state else "—"),
         ]
     )
-    st.markdown("**Elektron konfiguratsiya**")
+    st.markdown("**Electron configuration**")
     st.code(element.electron_configuration, language=None)
-    st.markdown("**Oksidlanish darajalari**")
+    st.markdown("**Oxidation states**")
     if element.oxidation_states:
         st.caption(
             ", ".join(f"{state:+d}" for state in element.oxidation_states)
-            + "  — birinchisi siz eng ko'p uchratadigani."
+            + "  — the first is the one you will meet most."
         )
     else:
-        st.caption("Asosiy oksidlanish darajalari yo'q — bu element odatda birikmalar hosil qilmaydi.")
+        st.caption("No common oxidation states — this element does not usually form compounds.")
     if element.uses:
-        st.markdown("**Qayerda ishlatiladi/uchraydi**")
+        st.markdown("**Where it turns up**")
         st.caption(element.uses)
 
     neighbours = [
@@ -118,6 +118,6 @@ with detail_columns[1]:
     if links:
         st.markdown(
             f'<div style="margin-top:0.8rem;font-family:var(--mono);font-size:0.78rem">'
-            f"Yaqinida: {links}</div>",
+            f"Nearby: {links}</div>",
             unsafe_allow_html=True,
         )

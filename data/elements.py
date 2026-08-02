@@ -269,24 +269,24 @@ def _block(number: int, group: int | None) -> str:
 
 def _category(symbol: str, number: int, group: int | None, block: str) -> str:
     if block == "f":
-        return "lantanoid" if number <= 71 else "aktinoid"
+        return "lanthanide" if number <= 71 else "actinide"
     if group == 18:
-        return "asil gaz"
+        return "noble gas"
     if group == 17:
-        return "galogen"
+        return "halogen"
     if group == 1 and symbol != "H":
-        return "ishqoriy metall"
+        return "alkali metal"
     if group == 2:
-        return "ishqoriy-yer metall"
+        return "alkaline earth metal"
     if symbol in _METALLOIDS:
         return "metalloid"
     if symbol in _NONMETALS:
-        return "metallmas"
+        return "nonmetal"
     if symbol in _POST_TRANSITION:
-        return "o'tish metallidan keyingi metall"
+        return "post-transition metal"
     if block == "d":
-        return "o'tish metalli"
-    return "metallmas"
+        return "transition metal"
+    return "nonmetal"
 
 
 def _build() -> dict[str, Element]:
@@ -316,9 +316,9 @@ ELEMENTS: Final[dict[str, Element]] = _build()
 SYMBOLS: Final[frozenset[str]] = frozenset(ELEMENTS)
 BY_NUMBER: Final[dict[int, Element]] = {e.number: e for e in ELEMENTS.values()}
 CATEGORY_ORDER: Final[tuple[str, ...]] = (
-    "ishqoriy metall", "ishqoriy-yer metall", "o'tish metalli",
-    "o'tish metallidan keyingi metall", "metalloid", "metallmas", "galogen",
-    "asil gaz", "lantanoid", "aktinoid",
+    "alkali metal", "alkaline earth metal", "transition metal",
+    "post-transition metal", "metalloid", "nonmetal", "halogen",
+    "noble gas", "lanthanide", "actinide",
 )
 
 
