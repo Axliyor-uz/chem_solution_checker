@@ -93,15 +93,15 @@ CONDITION_KEYS: Final[tuple[str, ...]] = (
     "Pt", "MnO2", "Ni", "V2O5", "Fe", "Δ (heat)", "hv (light)", "high pressure", "electrolysis",
 )
 
-EXAMPLES: Final[tuple[tuple[str, str], ...]] = (
-    ("Water from its elements", "H2 + O2 -> H2O"),
-    ("Rusting iron", "Fe + O2 -> Fe2O3"),
-    ("Thermal decomposition", "CaCO3 -> CaO + CO2"),
-    ("Neutralisation", "NaOH + HCl -> NaCl + H2O"),
-    ("Burning propane", "C3H8 + O2 -> CO2 + H2O"),
-    ("Contact process", "SO2(g) + O2(g) <=> SO3(g)"),
-    ("Precipitation", "NaCl(aq) + AgNO3(aq) -> AgCl(s) + NaNO3(aq)"),
-    ("Ionic redox", "MnO4- + Fe2+ + H+ -> Mn2+ + Fe3+ + H2O"),
+EXAMPLES: Final[tuple[tuple[str, str, str], ...]] = (
+    ("Water", "Water from its elements", "H2 + O2 -> H2O"),
+    ("Rust", "Rusting iron", "Fe + O2 -> Fe2O3"),
+    ("Heat", "Thermal decomposition", "CaCO3 -> CaO + CO2"),
+    ("Acid", "Neutralisation", "NaOH + HCl -> NaCl + H2O"),
+    ("Burn", "Burning propane", "C3H8 + O2 -> CO2 + H2O"),
+    ("Contact", "Contact process", "SO2(g) + O2(g) <=> SO3(g)"),
+    ("Ppt", "Precipitation", "NaCl(aq) + AgNO3(aq) -> AgCl(s) + NaNO3(aq)"),
+    ("Redox", "Ionic redox", "MnO4- + Fe2+ + H+ -> Mn2+ + Fe3+ + H2O"),
 )
 
 
@@ -205,21 +205,28 @@ def live_preview(text: str) -> None:
     )
 
 
-def example_picker(target_key: str, columns: int = 4) -> None:
-    """Buttons that load worked examples into the equation box."""
+def example_picker(target_key: str, columns: int = 6) -> None:
+    """Buttons that load worked examples into the equation box.
+
+    The buttons carry a one-word label so a whole row fits on a phone; the
+    full name and the equation itself are in the tooltip. The ``example-grid``
+    container is styled to keep the row horizontal at any width.
+    """
     st.caption("Or start from an example:")
-    for start in range(0, len(EXAMPLES), columns):
-        row = EXAMPLES[start: start + columns]
-        slots = st.columns(columns)
-        for index, (name, equation) in enumerate(row):
-            with slots[index]:
-                st.button(
-                    name,
-                    key=f"example-{start + index}",
-                    on_click=_set_value,
-                    args=(target_key, equation),
-                    width="stretch",
-                )
+    with st.container(key="example-grid"):
+        for start in range(0, len(EXAMPLES), columns):
+            row = EXAMPLES[start: start + columns]
+            slots = st.columns(columns)
+            for index, (short, name, equation) in enumerate(row):
+                with slots[index]:
+                    st.button(
+                        short,
+                        key=f"example-{start + index}",
+                        help=f"{name} — {to_display(equation)}",
+                        on_click=_set_value,
+                        args=(target_key, equation),
+                        width="stretch",
+                    )
 
 
 def _set_value(target_key: str, value: str) -> None:

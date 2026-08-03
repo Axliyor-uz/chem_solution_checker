@@ -189,6 +189,13 @@ div.stButton > button[kind="primary"] {
   background: var(--copper); color: #06231C; border-color: var(--copper); font-weight: 600;
 }
 div.stButton > button[kind="primary"]:hover { background: #45D8B8; color: #06231C; }
+/* Example picker — six compact keys per row, never stacked ----------------- */
+.st-key-example-grid [data-testid="stHorizontalBlock"] { flex-wrap: nowrap !important; gap: 0.3rem; }
+.st-key-example-grid [data-testid="stColumn"] { min-width: 0 !important; flex: 1 1 0 !important; }
+.st-key-example-grid div.stButton > button {
+  padding: 0.18rem 0.15rem; font-size: 0.72rem; min-height: 0; line-height: 1.35;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .stTabs [data-baseweb="tab"] { font-family: var(--mono); font-size: 0.82rem; }
 .stTabs [aria-selected="true"] { color: var(--copper) !important; }
 div[data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 4px; }

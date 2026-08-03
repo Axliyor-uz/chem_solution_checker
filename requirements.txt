@@ -1,5 +1,5 @@
 # Chemistry Solution Checker — runtime dependencies
-streamlit>=1.36          # multipage navigation via st.Page / st.navigation
+streamlit>=1.49          # st.Page navigation, keyed containers, width= on widgets
 sympy>=1.12              # exact rational null-space solving for the balancer
 pandas>=2.0              # result tables
 matplotlib>=3.7          # PNG export
