@@ -1,9 +1,9 @@
-"""Text helpers that move between what a student types and what they read.
+"""O'quvchi yozgan matn bilan u o'qiydigan ko'rinish orasidagi yordamchilar.
 
-Internally every formula is stored in plain ASCII (``H2O``, ``SO4^2-``).
-Only at render time is it turned into typeset chemistry (``H₂O``, ``SO₄²⁻``).
-Keeping the two representations apart means the parser never has to worry
-about Unicode and the display never has to worry about grammar.
+Ichkarida har bir formula oddiy ASCII ko'rinishida saqlanadi (``H2O``,
+``SO4^2-``). U faqat chizish paytida terilgan kimyoviy yozuvga aylanadi
+(``H₂O``, ``SO₄²⁻``). Ikki ko'rinishni ajratib turish tufayli parser hech
+qachon Unicode bilan, ko'rinish esa grammatika bilan ovora bo'lmaydi.
 """
 
 from __future__ import annotations
@@ -21,12 +21,12 @@ SUPERSCRIPTS: Final[dict[str, str]] = {
     "+": "⁺", "-": "⁻",
 }
 _SUB_TO_ASCII: Final[dict[int, str]] = {ord(v): k for k, v in SUBSCRIPTS.items()}
-#: Keyed by character, not ordinal, because it is used for ``in`` tests.
+#: Kalit sifatida tartib raqami emas, belgining o'zi ishlatiladi — ``in`` tekshiruvi uchun.
 _SUP_TO_ASCII: Final[dict[str, str]] = {v: k for k, v in SUPERSCRIPTS.items()}
 
-#: Everything a student might type for "reacts to give".
+#: O'quvchi "reaksiyaga kirishib hosil qiladi" ma'nosida yozishi mumkin bo'lgan hamma narsa.
 FORWARD_ARROWS: Final[tuple[str, ...]] = ("-->", "->", "=>", "→", "⟶", "⇒")
-#: Everything a student might type for "equilibrium".
+#: O'quvchi "muvozanat" ma'nosida yozishi mumkin bo'lgan hamma narsa.
 REVERSIBLE_ARROWS: Final[tuple[str, ...]] = ("<->", "<=>", "⇌", "⇄", "↔", "<-->")
 
 CANONICAL_FORWARD: Final[str] = "->"
@@ -36,9 +36,9 @@ _STATE_PATTERN: Final[re.Pattern[str]] = re.compile(r"\((s|l|g|aq)\)\s*$", re.IG
 
 
 def strip_unicode_digits(text: str) -> str:
-    """Turn typeset digits back into ASCII so the parser can read them.
+    """Terilgan raqamlarni ASCII ga qaytaradi, toki parser ularni o'qiy olsin.
 
-    ``H₂SO₄`` becomes ``H2SO4`` and ``Fe³⁺`` becomes ``Fe^3+``.
+    ``H₂SO₄`` → ``H2SO4``, ``Fe³⁺`` → ``Fe^3+``.
     """
     text = text.translate(_SUB_TO_ASCII)
     out: list[str] = []
@@ -56,22 +56,22 @@ def strip_unicode_digits(text: str) -> str:
 
 
 def normalize_arrows(text: str) -> str:
-    """Collapse every accepted arrow spelling onto two canonical forms."""
-    # Reversible arrows are parked on a placeholder first: the canonical form
-    # "<->" contains "->", so replacing forward arrows would otherwise split it.
+    """Qabul qilinadigan barcha strelka yozuvlarini ikkita kanonik shaklga keltiradi."""
+    # Qaytar strelkalar avval vaqtincha belgiga qo'yiladi: kanonik "<->" shakli
+    # "->" ni o'z ichiga oladi, aks holda to'g'ri strelkani almashtirish uni buzardi.
     placeholder = "\x00"
     for arrow in sorted(REVERSIBLE_ARROWS, key=len, reverse=True):
         text = text.replace(arrow, placeholder)
     for arrow in sorted(FORWARD_ARROWS, key=len, reverse=True):
         text = text.replace(arrow, f" {CANONICAL_FORWARD} ")
-    # A bare "=" is an arrow too, once the "<=>" spellings are already parked.
+    # "<=>" yozuvlari chetga olingandan keyin yolg'iz "=" ham strelka hisoblanadi.
     text = re.sub(r"(?<![<\->=])=(?![>=])", f" {CANONICAL_FORWARD} ", text)
     text = text.replace(placeholder, f" {CANONICAL_REVERSIBLE} ")
     return re.sub(r"\s+", " ", text).strip()
 
 
 def normalize_input(text: str) -> str:
-    """Full clean-up of raw keyboard input into canonical ASCII notation."""
+    """Klaviaturadan kelgan xom matnni kanonik ASCII yozuviga to'liq tozalaydi."""
     text = strip_unicode_digits(text)
     text = text.replace("∙", "*").replace("·", "*").replace("•", "*")
     text = text.replace("↑", "(g)").replace("↓", "(s)")
@@ -88,11 +88,11 @@ def _subscript(text: str) -> str:
 
 
 def to_display(text: str) -> str:
-    """Typeset an ASCII formula or whole equation for reading.
+    """ASCII formulani yoki butun tenglamani o'qish uchun teradi.
 
-    Digits are subscripted only when they follow an element symbol or a
-    closing bracket, so the ``2`` in ``2H2O`` stays full size as a
-    coefficient while both other digits drop down.
+    Raqam faqat element belgisidan yoki yopuvchi qavsdan keyin kelgandagina
+    pastki indeksga tushadi, shuning uchun ``2H2O`` dagi birinchi ``2``
+    koeffitsiyent sifatida to'liq o'lchamda qoladi.
     """
     text = strip_unicode_digits(text)
     out: list[str] = []
@@ -129,7 +129,7 @@ def to_display(text: str) -> str:
 
 
 def split_state(token: str) -> tuple[str, str | None]:
-    """Peel a trailing physical state off a species token."""
+    """Modda yozuvining oxiridagi fizik holatni ajratib oladi."""
     match = _STATE_PATTERN.search(token)
     if not match:
         return token, None
@@ -137,7 +137,7 @@ def split_state(token: str) -> tuple[str, str | None]:
 
 
 def format_number(value: float, digits: int = 4) -> str:
-    """Format a quantity for a results table without trailing noise."""
+    """Miqdorni natijalar jadvali uchun ortiqcha raqamlarsiz formatlaydi."""
     if value == 0:
         return "0"
     if abs(value) >= 1e5 or abs(value) < 1e-4:

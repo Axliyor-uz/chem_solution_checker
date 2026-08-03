@@ -1,7 +1,7 @@
-"""Taking a result out of the app.
+"""Natijani dasturdan tashqariga chiqarish.
 
-Four formats, each for a different destination: JSON for another program,
-CSV for a spreadsheet, PDF for handing in, PNG for pasting into notes.
+To'rtta format, har biri o'z maqsadi uchun: JSON — boshqa dastur uchun,
+CSV — jadval uchun, PDF — topshirish uchun, PNG — daftarga qo'yish uchun.
 """
 
 from __future__ import annotations
@@ -17,11 +17,21 @@ from components.reaction_classifier import classify
 from components.validator import ValidationReport
 from utils.formatting import format_number
 
-_TIMESTAMP: Final[str] = "%d %B %Y, %H:%M"
+#: Oy nomlari — ``strftime`` mahalliylashtirishga tayanmasligi uchun qo'lda berilgan.
+_MONTHS: Final[tuple[str, ...]] = (
+    "yanvar", "fevral", "mart", "aprel", "may", "iyun",
+    "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr",
+)
+
+
+def _stamp() -> str:
+    """Joriy sana va vaqt, o'zbekcha oy nomi bilan."""
+    now = datetime.now()
+    return f"{now.day} {_MONTHS[now.month - 1]} {now.year}, {now:%H:%M}"
 
 
 def to_dict(report: ValidationReport, steps: Sequence[Step] = ()) -> dict[str, Any]:
-    """A complete, machine-readable record of one check."""
+    """Bitta tekshiruvning to'liq, mashina o'qiy oladigan yozuvi."""
     payload: dict[str, Any] = {
         "checked_at": datetime.now().isoformat(timespec="seconds"),
         "typed": report.source,
@@ -73,13 +83,13 @@ def to_dict(report: ValidationReport, steps: Sequence[Step] = ()) -> dict[str, A
 
 
 def to_json(report: ValidationReport, steps: Sequence[Step] = ()) -> str:
-    """The record as formatted JSON."""
+    """Yozuvning formatlangan JSON ko'rinishi."""
     return json.dumps(to_dict(report, steps), indent=2)
 
 
 def to_csv(report: ValidationReport) -> str:
-    """Atom counts as CSV, the part that belongs in a spreadsheet."""
-    lines = ["element,reactant_atoms,product_atoms,difference,balanced"]
+    """Atomlar hisobi CSV ko'rinishida — jadvalga tushadigan qism."""
+    lines = ["element,reagent_atomlari,mahsulot_atomlari,farq,muvozanat"]
     for row in report.rows:
         lines.append(
             f"{row.element},{row.left},{row.right},{row.difference},{str(row.balanced).lower()}"
@@ -88,11 +98,11 @@ def to_csv(report: ValidationReport) -> str:
 
 
 def to_pdf(report: ValidationReport, steps: Sequence[Step] = ()) -> bytes:
-    """A one-page worked solution as PDF.
+    """Bir betlik yechim PDF ko'rinishida.
 
     Returns:
-        PDF file contents. Falls back to a plain-text byte string if
-        ReportLab is not installed.
+        PDF fayl tarkibi. ReportLab o'rnatilmagan bo'lsa, oddiy matnli
+        baytlar qatoriga qaytadi.
     """
     try:
         from reportlab.lib.enums import TA_LEFT
@@ -110,7 +120,7 @@ def to_pdf(report: ValidationReport, steps: Sequence[Step] = ()) -> bytes:
     document = SimpleDocTemplate(
         buffer, pagesize=A4,
         leftMargin=20 * mm, rightMargin=20 * mm, topMargin=18 * mm, bottomMargin=18 * mm,
-        title="Chemistry solution check",
+        title="Kimyoviy yechim tekshiruvi",
     )
     sheet = getSampleStyleSheet()
     heading = ParagraphStyle(
@@ -130,20 +140,20 @@ def to_pdf(report: ValidationReport, steps: Sequence[Step] = ()) -> bytes:
     )
 
     flow: list[Any] = [
-        Paragraph("Chemistry solution check", heading),
-        Paragraph(datetime.now().strftime(_TIMESTAMP), label),
-        Paragraph(f"<b>Typed:</b> {_escape(report.source)}", body),
+        Paragraph("Kimyoviy yechim tekshiruvi", heading),
+        Paragraph(_stamp(), label),
+        Paragraph(f"<b>Yozilgani:</b> {_escape(report.source)}", body),
     ]
     if report.equation:
         flow.append(Paragraph(_escape(report.equation.display), formula))
     if report.balance and report.balance.equation and report.balance.succeeded:
-        flow.append(Paragraph("<b>Balanced:</b>", body))
+        flow.append(Paragraph("<b>Muvozanatlangan:</b>", body))
         flow.append(Paragraph(_escape(report.balance.equation.display), formula))
-    flow.append(Paragraph(f"<b>Verdict:</b> {_escape(report.headline)}", body))
+    flow.append(Paragraph(f"<b>Xulosa:</b> {_escape(report.headline)}", body))
     flow.append(Spacer(1, 6))
 
     if report.rows:
-        flow.append(Paragraph("Atom count", step_title))
+        flow.append(Paragraph("Atomlar hisobi", step_title))
         flow.append(_atom_table(report.rows))
 
     for issue in report.sorted_issues:
@@ -151,14 +161,14 @@ def to_pdf(report: ValidationReport, steps: Sequence[Step] = ()) -> bytes:
         if issue.detail:
             text += f"<br/>{_escape(issue.detail)}"
         if issue.fix:
-            text += f"<br/><i>Fix: {_escape(issue.fix)}</i>"
+            text += f"<br/><i>Yechim: {_escape(issue.fix)}</i>"
         flow.append(Spacer(1, 4))
         flow.append(Paragraph(text, body))
 
     if steps:
-        flow.append(Paragraph("Worked solution", step_title))
+        flow.append(Paragraph("Yechim qadamlari", step_title))
         for step in steps:
-            flow.append(Paragraph(f"Step {step.number} — {_escape(step.title)}", step_title))
+            flow.append(Paragraph(f"{step.number}-qadam — {_escape(step.title)}", step_title))
             flow.append(Paragraph(_escape(step.body), body))
             if step.equation:
                 flow.append(Paragraph(f"<font face='Courier'>{_escape(step.equation)}</font>", body))
@@ -173,9 +183,9 @@ def _atom_table(rows: Sequence[AtomRow]) -> Any:
     from reportlab.lib import colors
     from reportlab.platypus import Table, TableStyle
 
-    data = [["Element", "Reactants", "Products", "Balanced"]]
+    data = [["Element", "Reagentlar", "Mahsulotlar", "Muvozanat"]]
     for row in rows:
-        data.append([row.element, str(row.left), str(row.right), "yes" if row.balanced else "no"])
+        data.append([row.element, str(row.left), str(row.right), "bor" if row.balanced else "yo'q"])
     table = Table(data, colWidths=[70, 90, 90, 90])
     style = [
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -195,7 +205,7 @@ def _atom_table(rows: Sequence[AtomRow]) -> Any:
 
 
 def to_png(report: ValidationReport) -> bytes:
-    """A shareable image of the equation and its atom counts."""
+    """Tenglama va uning atomlar hisobidan iborat, ulashsa bo'ladigan rasm."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -209,19 +219,19 @@ def to_png(report: ValidationReport) -> bytes:
     axes.axis("off")
 
     equation = report.equation.display if report.equation else report.source
-    axes.text(0.0, 1.0, "Solution check", color="#37C4A6", fontsize=8,
+    axes.text(0.0, 1.0, "Yechim tekshiruvi", color="#37C4A6", fontsize=8,
               family="monospace", transform=axes.transAxes, va="top")
     axes.text(0.0, 0.93, equation, color="#E6EDF5", fontsize=13, family="monospace",
               transform=axes.transAxes, va="top", wrap=True)
     balanced = report.balance.equation if report.balance else None
     if balanced and report.balance and report.balance.succeeded:
-        axes.text(0.0, 0.80, f"Balanced:  {balanced.display}", color="#37C4A6", fontsize=11,
+        axes.text(0.0, 0.80, f"Muvozanatlangan:  {balanced.display}", color="#37C4A6", fontsize=11,
                   family="monospace", transform=axes.transAxes, va="top")
     axes.text(0.0, 0.70, report.headline, color="#8496AD", fontsize=9,
               transform=axes.transAxes, va="top")
 
     top = 0.60
-    axes.text(0.0, top, "ELEMENT      REACTANTS   PRODUCTS", color="#8496AD", fontsize=8,
+    axes.text(0.0, top, "ELEMENT      REAGENTLAR   MAHSULOTLAR", color="#8496AD", fontsize=8,
               family="monospace", transform=axes.transAxes, va="top")
     for index, row in enumerate(rows):
         colour = "#37C4A6" if row.balanced else "#E7515F"
@@ -231,7 +241,7 @@ def to_png(report: ValidationReport) -> bytes:
             color=colour, fontsize=9, family="monospace",
             transform=axes.transAxes, va="top",
         )
-    axes.text(0.0, 0.02, datetime.now().strftime(_TIMESTAMP), color="#57657C", fontsize=7,
+    axes.text(0.0, 0.02, _stamp(), color="#57657C", fontsize=7,
               transform=axes.transAxes, va="bottom")
 
     buffer = io.BytesIO()
@@ -242,25 +252,25 @@ def to_png(report: ValidationReport) -> bytes:
 
 def _plain_text(report: ValidationReport, steps: Sequence[Step]) -> str:
     lines = [
-        "Chemistry solution check",
-        datetime.now().strftime(_TIMESTAMP),
+        "Kimyoviy yechim tekshiruvi",
+        _stamp(),
         "",
-        f"Typed: {report.source}",
+        f"Yozilgani: {report.source}",
     ]
     if report.equation:
-        lines.append(f"Read as: {report.equation.display}")
+        lines.append(f"O'qilgani: {report.equation.display}")
     if report.balance and report.balance.equation:
-        lines.append(f"Balanced: {report.balance.equation.display}")
-    lines.extend(["", f"Verdict: {report.headline}", ""])
+        lines.append(f"Muvozanatlangan: {report.balance.equation.display}")
+    lines.extend(["", f"Xulosa: {report.headline}", ""])
     for row in report.rows:
         lines.append(f"  {row.element}: {row.left} / {row.right} — {row.short_note}")
     for step in steps:
-        lines.extend(["", f"Step {step.number}: {step.title}", step.body, *step.lines])
+        lines.extend(["", f"{step.number}-qadam: {step.title}", step.body, *step.lines])
     return "\n".join(lines)
 
 
 def summary_filename(report: ValidationReport, extension: str) -> str:
-    """A filename that says what is inside it."""
+    """Ichida nima borligini bildiruvchi fayl nomi."""
     stem = "equation"
     if report.equation:
         stem = report.equation.ascii.replace(" ", "").replace("->", "-to-").replace("<->", "-eq-")

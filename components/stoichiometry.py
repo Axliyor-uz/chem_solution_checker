@@ -1,8 +1,8 @@
-"""Mole arithmetic on a balanced equation.
+"""Muvozanatlangan tenglama bo'yicha mol hisob-kitobi.
 
-Everything here starts from moles. Grams, litres of gas and solution volumes
-are converted to moles first, the coefficients do the work, and the answer is
-converted back — which is exactly the route a student is taught to follow.
+Bu yerda hamma narsa moldan boshlanadi. Gramm, gaz litri va eritma hajmi avval
+molga o'giriladi, keyin koeffitsiyentlar ish beradi va javob yana qaytariladi —
+aynan o'quvchiga o'rgatiladigan yo'l.
 """
 
 from __future__ import annotations
@@ -15,45 +15,45 @@ from components.parser import Equation, Species
 
 Unit = Literal["mol", "g", "kg", "mg", "L_gas", "mL_gas", "L_solution", "mL_solution"]
 
-#: Molar volume of an ideal gas, litres per mole.
+#: Ideal gazning molyar hajmi, litr/mol.
 MOLAR_VOLUME_STP: Final[float] = 22.414   # 0 °C, 1 atm
 MOLAR_VOLUME_RTP: Final[float] = 24.055   # 25 °C, 1 atm
 GAS_CONSTANT: Final[float] = 0.082057     # L·atm / (mol·K)
 
 UNIT_LABELS: Final[dict[Unit, str]] = {
-    "mol": "moles",
-    "g": "grams",
-    "kg": "kilograms",
-    "mg": "milligrams",
-    "L_gas": "litres of gas",
-    "mL_gas": "millilitres of gas",
-    "L_solution": "litres of solution",
-    "mL_solution": "millilitres of solution",
+    "mol": "mol",
+    "g": "gramm",
+    "kg": "kilogramm",
+    "mg": "milligramm",
+    "L_gas": "litr gaz",
+    "mL_gas": "millilitr gaz",
+    "L_solution": "litr eritma",
+    "mL_solution": "millilitr eritma",
 }
 
 
 class StoichiometryError(ValueError):
-    """Raised when a calculation cannot be set up from the given inputs."""
+    """Berilgan ma'lumotlardan hisob tuzib bo'lmaganda ko'tariladi."""
 
 
 @dataclass(frozen=True, slots=True)
 class Amount:
-    """A quantity of one species, in whatever unit the student has."""
+    """Bitta moddaning miqdori — o'quvchida qanday birlikda bo'lsa, shunday."""
 
     species_index: int
     value: float
     unit: Unit = "g"
-    concentration: float | None = None  # mol/L, for solution volumes
+    concentration: float | None = None  # mol/L, eritma hajmlari uchun
 
     def to_moles(self, species: Species, molar_volume: float) -> float:
-        """Convert to moles.
+        """Molga o'giradi.
 
         Raises:
-            StoichiometryError: If a solution volume is given without a
-                concentration, or the amount is negative.
+            StoichiometryError: Eritma hajmi konsentratsiyasiz berilgan bo'lsa
+                yoki miqdor manfiy bo'lsa.
         """
         if self.value < 0:
-            raise StoichiometryError("Amounts cannot be negative.")
+            raise StoichiometryError("Miqdor manfiy bo'lishi mumkin emas.")
         mass = species.formula.molar_mass
         if self.unit == "mol":
             return self.value
@@ -70,16 +70,16 @@ class Amount:
         if self.unit in {"L_solution", "mL_solution"}:
             if not self.concentration:
                 raise StoichiometryError(
-                    "A solution volume needs a concentration in mol/L to become moles."
+                    "Eritma hajmini molga o'girish uchun mol/L dagi konsentratsiya kerak."
                 )
             litres = self.value if self.unit == "L_solution" else self.value / 1000.0
             return litres * self.concentration
-        raise StoichiometryError(f"Unknown unit '{self.unit}'.")
+        raise StoichiometryError(f"Noma'lum birlik: '{self.unit}'.")
 
 
 @dataclass(slots=True)
 class SpeciesResult:
-    """What the calculation says about one species."""
+    """Hisob bitta modda haqida nima deydi."""
 
     species: Species
     role: Literal["reactant", "product"]
@@ -103,7 +103,7 @@ class SpeciesResult:
 
 @dataclass(slots=True)
 class StoichiometryResult:
-    """The full picture for one set of starting amounts."""
+    """Bitta boshlang'ich miqdorlar to'plami uchun to'liq manzara."""
 
     equation: Equation
     results: list[SpeciesResult]
@@ -130,19 +130,19 @@ class StoichiometryResult:
 
 
 class StoichiometryCalculator:
-    """Runs mole calculations on a balanced equation."""
+    """Muvozanatlangan tenglama bo'yicha mol hisoblarini bajaradi."""
 
     def __init__(self, molar_volume: float = MOLAR_VOLUME_STP) -> None:
         self.molar_volume = molar_volume
 
     @staticmethod
     def molar_volume_at(temperature_c: float, pressure_atm: float = 1.0) -> float:
-        """Ideal-gas molar volume in L/mol at a given temperature and pressure."""
+        """Berilgan harorat va bosimdagi ideal gaz molyar hajmi, L/mol."""
         if pressure_atm <= 0:
-            raise StoichiometryError("Pressure must be greater than zero.")
+            raise StoichiometryError("Bosim noldan katta bo'lishi kerak.")
         kelvin = temperature_c + 273.15
         if kelvin <= 0:
-            raise StoichiometryError("Temperature is below absolute zero.")
+            raise StoichiometryError("Harorat mutlaq noldan past.")
         return GAS_CONSTANT * kelvin / pressure_atm
 
     def calculate(
@@ -151,41 +151,40 @@ class StoichiometryCalculator:
         amounts: list[Amount],
         percent_yield: float | None = None,
     ) -> StoichiometryResult:
-        """Work out every quantity implied by the given starting amounts.
+        """Berilgan boshlang'ich miqdorlardan kelib chiqadigan barcha qiymatlarni hisoblaydi.
 
         Args:
-            equation: A balanced equation.
-            amounts: One or more known amounts of reactants (or of a single
-                product, to work backwards).
-            percent_yield: Optional actual yield as a percentage, applied to
-                the products.
+            equation: Muvozanatlangan tenglama.
+            amounts: Reagentlarning bir yoki bir nechta ma'lum miqdori (yoki
+                teskari hisoblash uchun bitta mahsulot miqdori).
+            percent_yield: Ixtiyoriy amaliy unum, foizda — mahsulotlarga qo'llanadi.
 
         Returns:
-            A :class:`StoichiometryResult`.
+            :class:`StoichiometryResult`.
 
         Raises:
-            StoichiometryError: If the equation is not balanced or no amount
-                was supplied.
+            StoichiometryError: Tenglama muvozanatlanmagan bo'lsa yoki hech qanday
+                miqdor berilmagan bo'lsa.
         """
         if not is_balanced(equation):
             raise StoichiometryError(
-                "Balance the equation first — mole ratios come from the coefficients."
+                "Avval tenglamani muvozanatlang — mol nisbatlari koeffitsiyentlardan olinadi."
             )
         if not amounts:
-            raise StoichiometryError("Give at least one known amount.")
+            raise StoichiometryError("Kamida bitta ma'lum miqdorni kiriting.")
 
         species = equation.species
         supplied: dict[int, float] = {}
         for amount in amounts:
             if not 0 <= amount.species_index < len(species):
-                raise StoichiometryError("An amount refers to a species that is not in the equation.")
+                raise StoichiometryError("Miqdor tenglamada yo'q moddaga tegishli.")
             moles = amount.to_moles(species[amount.species_index], self.molar_volume)
             supplied[amount.species_index] = supplied.get(amount.species_index, 0.0) + moles
 
         split = len(equation.reactants)
         notes: list[str] = []
 
-        # The extent of reaction: how many times the equation as written can run.
+        # Reaksiya darajasi: tenglama yozilgan holida necha marta bora oladi.
         reactant_extents = {
             index: moles / species[index].coefficient
             for index, moles in supplied.items()
@@ -196,7 +195,7 @@ class StoichiometryCalculator:
             limiting_index = min(reactant_extents, key=lambda i: reactant_extents[i])
             if len(reactant_extents) == 1:
                 notes.append(
-                    "Only one starting amount was given, so it is assumed to be fully consumed."
+                    "Faqat bitta boshlang'ich miqdor berilgan, shuning uchun u to'liq sarflanadi deb olindi."
                 )
         else:
             product_extents = {
@@ -206,7 +205,7 @@ class StoichiometryCalculator:
             }
             extent = min(product_extents.values())
             limiting_index = None
-            notes.append("Working backwards from a product to the reactants it requires.")
+            notes.append("Mahsulotdan teskari yo'nalishda unga kerak bo'lgan reagentlar hisoblanmoqda.")
 
         results: list[SpeciesResult] = []
         for index, item in enumerate(species):
@@ -234,13 +233,13 @@ class StoichiometryCalculator:
 
         if percent_yield is not None:
             notes.append(
-                f"Product amounts include the {percent_yield:g}% yield; "
-                "the theoretical values are higher."
+                f"Mahsulot miqdorlari {percent_yield:g}% unum bilan berilgan; "
+                "nazariy qiymatlar bundan yuqori."
             )
         limiting = results[limiting_index] if limiting_index is not None else None
         if limiting and len(reactant_extents) > 1:
             notes.append(
-                f"{limiting.name} runs out first, so it fixes how far the reaction goes."
+                f"{limiting.name} birinchi bo'lib tugaydi, ya'ni reaksiya qay darajada borishini u belgilaydi."
             )
         return StoichiometryResult(
             equation=equation,
@@ -253,7 +252,7 @@ class StoichiometryCalculator:
 
 
 def mole_ratio(equation: Equation, from_index: int, to_index: int) -> str:
-    """The ratio between two species, written the way it is used."""
+    """Ikki modda orasidagi nisbat — ishlatiladigan ko'rinishda."""
     species = equation.species
     first, second = species[from_index], species[to_index]
     return (
@@ -263,11 +262,11 @@ def mole_ratio(equation: Equation, from_index: int, to_index: int) -> str:
 
 
 def percent_yield(actual: float, theoretical: float) -> float:
-    """Percent yield from actual and theoretical amounts in the same unit."""
+    """Bir xil birlikdagi amaliy va nazariy miqdorlardan foizli unum."""
     if theoretical <= 0:
-        raise StoichiometryError("Theoretical yield must be greater than zero.")
+        raise StoichiometryError("Nazariy unum noldan katta bo'lishi kerak.")
     return actual / theoretical * 100.0
 
 
-#: Default calculator at STP.
+#: Standart sharoitdagi (STP) asosiy kalkulyator.
 calculator: Final[StoichiometryCalculator] = StoichiometryCalculator()

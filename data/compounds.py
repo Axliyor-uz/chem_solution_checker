@@ -1,8 +1,8 @@
-"""Compound reference data and a fallback namer.
+"""Birikmalar bo'yicha ma'lumotnoma va zaxira nomlagich.
 
-The lookup table covers the compounds a syllabus actually uses. Anything
-outside it falls through to :func:`name_from_formula`, which applies the
-ordinary naming rules rather than returning nothing.
+Jadval o'quv dasturida haqiqatan uchraydigan birikmalarni qamrab oladi.
+Undan tashqaridagi hamma narsa :func:`name_from_formula` ga tushadi va
+hech narsa qaytarmaslik o'rniga oddiy nomlash qoidalari qo'llaniladi.
 """
 
 from __future__ import annotations
@@ -17,28 +17,28 @@ _METALS: Final[frozenset[str]] = frozenset(
     symbol
     for symbol, element in ELEMENTS.items()
     if element.category
-    in {"alkali metal", "alkaline earth metal", "transition metal",
-        "post-transition metal", "lanthanide", "actinide"}
+    in {"ishqoriy metall", "ishqoriy-yer metall", "o'tish metali",
+        "o'tishdan keyingi metall", "lantanoid", "aktinoid"}
 )
 
-#: Ions that survive a reaction intact and are best balanced as one unit.
+#: Reaksiyada butun holda saqlanadigan, bitta birlik sifatida tenglashtiriladigan ionlar.
 POLYATOMIC_IONS: Final[dict[str, tuple[str, int]]] = {
-    "OH": ("hydroxide", -1), "NO3": ("nitrate", -1), "NO2": ("nitrite", -1),
-    "SO4": ("sulfate", -2), "SO3": ("sulfite", -2), "CO3": ("carbonate", -2),
-    "HCO3": ("hydrogencarbonate", -1), "PO4": ("phosphate", -3),
-    "NH4": ("ammonium", 1), "ClO3": ("chlorate", -1), "ClO4": ("perchlorate", -1),
-    "ClO": ("hypochlorite", -1), "MnO4": ("permanganate", -1),
-    "Cr2O7": ("dichromate", -2), "CrO4": ("chromate", -2), "CN": ("cyanide", -1),
-    "SCN": ("thiocyanate", -1), "C2H3O2": ("acetate", -1), "HSO4": ("hydrogensulfate", -1),
+    "OH": ("gidroksid", -1), "NO3": ("nitrat", -1), "NO2": ("nitrit", -1),
+    "SO4": ("sulfat", -2), "SO3": ("sulfit", -2), "CO3": ("karbonat", -2),
+    "HCO3": ("gidrokarbonat", -1), "PO4": ("fosfat", -3),
+    "NH4": ("ammoniy", 1), "ClO3": ("xlorat", -1), "ClO4": ("perxlorat", -1),
+    "ClO": ("gipoxlorit", -1), "MnO4": ("permanganat", -1),
+    "Cr2O7": ("dixromat", -2), "CrO4": ("xromat", -2), "CN": ("sianid", -1),
+    "SCN": ("tiosianat", -1), "C2H3O2": ("asetat", -1), "HSO4": ("gidrosulfat", -1),
 }
 
 _ANION_STEMS: Final[dict[str, str]] = {
-    "O": "ox", "S": "sulf", "N": "nitr", "P": "phosph", "C": "carb", "H": "hydr",
-    "F": "fluor", "Cl": "chlor", "Br": "brom", "I": "iod", "Se": "selen",
-    "Te": "tellur", "As": "arsen", "Si": "silic", "B": "bor",
+    "O": "oks", "S": "sulf", "N": "nitr", "P": "fosf", "C": "karb", "H": "gidr",
+    "F": "ftor", "Cl": "xlor", "Br": "brom", "I": "yod", "Se": "selen",
+    "Te": "tellur", "As": "arsen", "Si": "silits", "B": "bor",
 }
 _PREFIXES: Final[tuple[str, ...]] = (
-    "", "mono", "di", "tri", "tetra", "penta", "hexa", "hepta", "octa", "nona", "deca",
+    "", "mono", "di", "tri", "tetra", "penta", "geksa", "gepta", "okta", "nona", "deka",
 )
 _ROMAN: Final[dict[int, str]] = {
     1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII",
@@ -47,7 +47,7 @@ _ROMAN: Final[dict[int, str]] = {
 
 @dataclass(frozen=True, slots=True)
 class Compound:
-    """Reference entry for one compound."""
+    """Bitta birikma haqidagi ma'lumotnoma yozuvi."""
 
     formula: str
     name: str
@@ -59,116 +59,135 @@ class Compound:
     hazards: str = ""
 
 
-#: Curated reference data. Densities are at room temperature unless noted.
+#: Tanlangan ma'lumotnoma. Zichliklar, boshqacha ko'rsatilmagan bo'lsa, xona haroratida.
 COMPOUNDS: Final[dict[str, Compound]] = {
     c.formula: c
     for c in (
-        Compound("H2O", "Water", "", "liquid", "1.00 g/cm³", "0 °C",
-                 "Solvent, coolant, reaction medium.", "None under normal use."),
-        Compound("H2SO4", "Sulfuric acid", "oil of vitriol", "liquid", "1.84 g/cm³", "10 °C",
-                 "Fertiliser, batteries, refining.",
-                 "Severe burns; dehydrates skin. Always add acid to water."),
-        Compound("HCl", "Hydrogen chloride", "muriatic acid in solution", "gas", "1.49 g/L", "-114 °C",
-                 "Pickling steel, pH control, digestion.",
-                 "Corrosive; the vapour attacks the airway."),
-        Compound("HNO3", "Nitric acid", "aqua fortis", "liquid", "1.51 g/cm³", "-42 °C",
-                 "Fertiliser, explosives, etching.", "Strong oxidiser; stains skin yellow."),
-        Compound("NaOH", "Sodium hydroxide", "caustic soda", "solid", "2.13 g/cm³", "318 °C",
-                 "Soap, paper, drain cleaner.", "Severe burns; dissolving releases heat."),
-        Compound("KOH", "Potassium hydroxide", "caustic potash", "solid", "2.04 g/cm³", "406 °C",
-                 "Soft soap, batteries, biodiesel.", "Severe burns."),
-        Compound("NaCl", "Sodium chloride", "table salt", "solid", "2.17 g/cm³", "801 °C",
-                 "Food, chlor-alkali feedstock, de-icing.", "None under normal use."),
-        Compound("CaCO3", "Calcium carbonate", "limestone, chalk", "solid", "2.71 g/cm³", "decomposes 825 °C",
-                 "Cement, antacids, filler.", "Dust irritates the lungs."),
-        Compound("CaO", "Calcium oxide", "quicklime", "solid", "3.34 g/cm³", "2613 °C",
-                 "Cement, steelmaking, soil treatment.", "Reacts with water, releasing heat."),
-        Compound("Ca(OH)2", "Calcium hydroxide", "slaked lime", "solid", "2.21 g/cm³", "decomposes 580 °C",
-                 "Mortar, water treatment, limewater test.", "Irritant to skin and eyes."),
-        Compound("CO2", "Carbon dioxide", "", "gas", "1.98 g/L", "sublimes -78 °C",
-                 "Carbonation, fire extinguishers, photosynthesis.",
-                 "Asphyxiant in enclosed spaces."),
-        Compound("CO", "Carbon monoxide", "", "gas", "1.14 g/L", "-205 °C",
-                 "Reducing agent in smelting, syngas.",
-                 "Odourless and fatal; binds haemoglobin."),
-        Compound("NH3", "Ammonia", "", "gas", "0.73 g/L", "-78 °C",
-                 "Fertiliser, refrigerant, cleaning.", "Pungent, corrosive to airways."),
-        Compound("CH4", "Methane", "natural gas", "gas", "0.66 g/L", "-182 °C",
-                 "Fuel, hydrogen production.", "Flammable; potent greenhouse gas."),
-        Compound("C2H5OH", "Ethanol", "alcohol", "liquid", "0.789 g/cm³", "-114 °C",
-                 "Solvent, fuel, disinfectant.", "Flammable; toxic in quantity."),
-        Compound("C6H12O6", "Glucose", "dextrose", "solid", "1.54 g/cm³", "146 °C",
-                 "Cellular fuel, fermentation feedstock.", "None under normal use."),
-        Compound("H2O2", "Hydrogen peroxide", "", "liquid", "1.45 g/cm³", "-0.4 °C",
-                 "Bleaching, disinfection, propellant.",
-                 "Strong oxidiser; concentrated solutions burn."),
-        Compound("O2", "Oxygen", "", "gas", "1.43 g/L", "-219 °C",
-                 "Respiration, steelmaking, welding.", "Accelerates fire violently."),
-        Compound("H2", "Hydrogen", "", "gas", "0.09 g/L", "-259 °C",
-                 "Ammonia synthesis, fuel cells.", "Explosive over a wide range in air."),
-        Compound("N2", "Nitrogen", "", "gas", "1.25 g/L", "-210 °C",
-                 "Inert atmospheres, cryogenics.", "Asphyxiant in enclosed spaces."),
-        Compound("Fe2O3", "Iron(III) oxide", "rust, haematite", "solid", "5.24 g/cm³", "1565 °C",
-                 "Iron ore, pigment, thermite.", "Dust irritates the lungs."),
-        Compound("FeO", "Iron(II) oxide", "wüstite", "solid", "5.75 g/cm³", "1377 °C",
-                 "Pigment, ceramic glaze.", "Dust irritant."),
-        Compound("Fe3O4", "Iron(II,III) oxide", "magnetite", "solid", "5.17 g/cm³", "1597 °C",
-                 "Iron ore, magnetic recording, pigment.", "Dust irritant."),
-        Compound("CuSO4", "Copper(II) sulfate", "blue vitriol (pentahydrate)", "solid",
-                 "3.60 g/cm³", "decomposes 650 °C",
-                 "Fungicide, electroplating, Fehling's test.", "Harmful if swallowed; toxic to fish."),
-        Compound("AgNO3", "Silver nitrate", "lunar caustic", "solid", "4.35 g/cm³", "212 °C",
-                 "Halide tests, photography, cauterisation.", "Corrosive; stains skin black."),
-        Compound("AgCl", "Silver chloride", "", "solid", "5.56 g/cm³", "455 °C",
-                 "Photographic emulsions, reference electrodes.",
-                 "Darkens in light; low toxicity."),
-        Compound("KMnO4", "Potassium permanganate", "", "solid", "2.70 g/cm³", "decomposes 240 °C",
-                 "Titrations, water treatment, disinfectant.",
-                 "Strong oxidiser; stains everything purple-brown."),
-        Compound("K2Cr2O7", "Potassium dichromate", "", "solid", "2.68 g/cm³", "398 °C",
-                 "Oxidising titrations, leather tanning.", "Carcinogenic; handle with care."),
-        Compound("NaHCO3", "Sodium hydrogencarbonate", "baking soda", "solid", "2.20 g/cm³",
-                 "decomposes 50 °C", "Baking, antacid, fire suppression.", "None under normal use."),
-        Compound("Na2CO3", "Sodium carbonate", "washing soda, soda ash", "solid", "2.54 g/cm³",
-                 "851 °C", "Glass, detergents, water softening.", "Irritant to eyes and skin."),
-        Compound("SO2", "Sulfur dioxide", "", "gas", "2.63 g/L", "-72 °C",
-                 "Sulfuric acid feedstock, preservative.",
-                 "Chokes; triggers asthma; forms acid rain."),
-        Compound("SO3", "Sulfur trioxide", "", "liquid", "1.92 g/cm³", "17 °C",
-                 "Sulfuric acid manufacture.", "Violently hygroscopic; severe burns."),
-        Compound("NO2", "Nitrogen dioxide", "", "gas", "1.88 g/L", "-11 °C",
-                 "Nitric acid intermediate.", "Brown, toxic; damages lung tissue."),
-        Compound("ZnCl2", "Zinc chloride", "", "solid", "2.91 g/cm³", "290 °C",
-                 "Soldering flux, wood preservative.", "Corrosive."),
-        Compound("MgO", "Magnesium oxide", "magnesia", "solid", "3.58 g/cm³", "2852 °C",
-                 "Refractory bricks, antacids.", "Dust irritant."),
-        Compound("Al2O3", "Aluminium oxide", "alumina, corundum", "solid", "3.99 g/cm³", "2072 °C",
-                 "Aluminium smelting, abrasives, ceramics.", "Dust irritant."),
-        Compound("CH3COOH", "Ethanoic acid", "acetic acid, vinegar", "liquid", "1.05 g/cm³", "17 °C",
-                 "Vinegar, solvent, plastics.", "Corrosive when concentrated."),
-        Compound("NH4Cl", "Ammonium chloride", "sal ammoniac", "solid", "1.53 g/cm³",
-                 "sublimes 338 °C", "Dry cells, flux, fertiliser.", "Irritant."),
-        Compound("BaSO4", "Barium sulfate", "", "solid", "4.49 g/cm³", "1580 °C",
-                 "X-ray contrast, drilling mud, pigment.",
-                 "Insoluble, so non-toxic — soluble barium salts are not."),
-        Compound("PbI2", "Lead(II) iodide", "", "solid", "6.16 g/cm³", "402 °C",
-                 "Golden-rain demonstration, detectors.", "Toxic; cumulative lead poison."),
+        Compound("H2O", "Suv", "", "suyuq", "1.00 g/sm³", "0 °C",
+                 "Erituvchi, sovutgich, reaksiya muhiti.", "Oddiy sharoitda xavfsiz."),
+        Compound("H2SO4", "Sulfat kislota", "kuporos moyi", "suyuq", "1.84 g/sm³", "10 °C",
+                 "O'g'it, akkumulyatorlar, neftni tozalash.",
+                 "Og'ir kuyish; terini kuydiradi. Doim kislotani suvga quying, aksincha emas."),
+        Compound("HCl", "Vodorod xlorid", "eritmada — xlorid kislota", "gaz", "1.49 g/L", "-114 °C",
+                 "Po'latni tozalash, pH nazorati, hazm qilish.",
+                 "Korroziy; bug'i nafas yo'llarini kuydiradi."),
+        Compound("HNO3", "Nitrat kislota", "aqua fortis", "suyuq", "1.51 g/sm³", "-42 °C",
+                 "O'g'it, portlovchi moddalar, o'yish.",
+                 "Kuchli oksidlovchi; teridan sariq dog' qoldiradi."),
+        Compound("NaOH", "Natriy gidroksid", "kaustik soda", "qattiq", "2.13 g/sm³", "318 °C",
+                 "Sovun, qog'oz, quvur tozalagich.",
+                 "Og'ir kuyish; suvda eriganda issiqlik chiqaradi."),
+        Compound("KOH", "Kaliy gidroksid", "kaustik potash", "qattiq", "2.04 g/sm³", "406 °C",
+                 "Yumshoq sovun, batareyalar, biodizel.", "Og'ir kuyish."),
+        Compound("NaCl", "Natriy xlorid", "osh tuzi", "qattiq", "2.17 g/sm³", "801 °C",
+                 "Oziq-ovqat, xlor-ishqor xomashyosi, muzni eritish.", "Oddiy sharoitda xavfsiz."),
+        Compound("CaCO3", "Kalsiy karbonat", "ohaktosh, bo'r", "qattiq", "2.71 g/sm³",
+                 "825 °C da parchalanadi",
+                 "Sement, antatsidlar, to'ldirgich.", "Changi o'pkani ta'sirlaydi."),
+        Compound("CaO", "Kalsiy oksid", "so'ndirilmagan ohak", "qattiq", "3.34 g/sm³", "2613 °C",
+                 "Sement, po'lat eritish, tuproqni ishlash.",
+                 "Suv bilan issiqlik chiqarib reaksiyaga kirishadi."),
+        Compound("Ca(OH)2", "Kalsiy gidroksid", "so'ndirilgan ohak", "qattiq", "2.21 g/sm³",
+                 "580 °C da parchalanadi",
+                 "Qorishma, suvni tozalash, ohakli suv sinovi.", "Teri va ko'zni ta'sirlaydi."),
+        Compound("CO2", "Uglerod dioksid", "karbonat angidrid", "gaz", "1.98 g/L",
+                 "-78 °C da sublimatsiyalanadi",
+                 "Gazlangan ichimliklar, o't o'chirgichlar, fotosintez.",
+                 "Yopiq joyda bo'g'uvchi."),
+        Compound("CO", "Uglerod monoksid", "is gazi", "gaz", "1.14 g/L", "-205 °C",
+                 "Metallurgiyada qaytaruvchi, sintez-gaz.",
+                 "Hidsiz va o'ldiruvchi; gemoglobin bilan bog'lanadi."),
+        Compound("NH3", "Ammiak", "", "gaz", "0.73 g/L", "-78 °C",
+                 "O'g'it, sovutgich, tozalash vositalari.",
+                 "O'tkir hidli, nafas yo'llari uchun korroziy."),
+        Compound("CH4", "Metan", "tabiiy gaz", "gaz", "0.66 g/L", "-182 °C",
+                 "Yoqilg'i, vodorod ishlab chiqarish.",
+                 "Oson yonuvchi; kuchli issiqxona gazi."),
+        Compound("C2H5OH", "Etanol", "spirt", "suyuq", "0.789 g/sm³", "-114 °C",
+                 "Erituvchi, yoqilg'i, dezinfeksiya vositasi.",
+                 "Oson yonuvchi; ko'p miqdorda zaharli."),
+        Compound("C6H12O6", "Glyukoza", "dekstroza, uzum shakari", "qattiq", "1.54 g/sm³", "146 °C",
+                 "Hujayra yoqilg'isi, achitish xomashyosi.", "Oddiy sharoitda xavfsiz."),
+        Compound("H2O2", "Vodorod peroksid", "", "suyuq", "1.45 g/sm³", "-0.4 °C",
+                 "Oqartirish, dezinfeksiya, raketa yoqilg'isi.",
+                 "Kuchli oksidlovchi; konsentrlangan eritmasi kuydiradi."),
+        Compound("O2", "Kislorod", "", "gaz", "1.43 g/L", "-219 °C",
+                 "Nafas olish, po'lat eritish, payvandlash.", "Yonishni keskin kuchaytiradi."),
+        Compound("H2", "Vodorod", "", "gaz", "0.09 g/L", "-259 °C",
+                 "Ammiak sintezi, yoqilg'i elementlari.",
+                 "Havo bilan keng oraliqda portlovchi aralashma hosil qiladi."),
+        Compound("N2", "Azot", "", "gaz", "1.25 g/L", "-210 °C",
+                 "Inert muhit, kriogenika.", "Yopiq joyda bo'g'uvchi."),
+        Compound("Fe2O3", "Temir(III) oksid", "zang, gematit", "qattiq", "5.24 g/sm³", "1565 °C",
+                 "Temir rudasi, pigment, termit.", "Changi o'pkani ta'sirlaydi."),
+        Compound("FeO", "Temir(II) oksid", "vyustit", "qattiq", "5.75 g/sm³", "1377 °C",
+                 "Pigment, keramika sirlari.", "Changi ta'sirlaydi."),
+        Compound("Fe3O4", "Temir(II,III) oksid", "magnetit", "qattiq", "5.17 g/sm³", "1597 °C",
+                 "Temir rudasi, magnit yozuv, pigment.", "Changi ta'sirlaydi."),
+        Compound("CuSO4", "Mis(II) sulfat", "mis kuporosi (pentagidrat)", "qattiq",
+                 "3.60 g/sm³", "650 °C da parchalanadi",
+                 "Fungitsid, galvanoplastika, Feling sinovi.",
+                 "Yutilsa zararli; baliqlar uchun zaharli."),
+        Compound("AgNO3", "Kumush nitrat", "jahannam toshi", "qattiq", "4.35 g/sm³", "212 °C",
+                 "Galogenid sinovlari, fotografiya, kuydirish.",
+                 "Korroziy; teridan qora dog' qoldiradi."),
+        Compound("AgCl", "Kumush xlorid", "", "qattiq", "5.56 g/sm³", "455 °C",
+                 "Foto emulsiyalar, taqqoslash elektrodlari.",
+                 "Yorug'likda qorayadi; kam zaharli."),
+        Compound("KMnO4", "Kaliy permanganat", "marganesovka", "qattiq", "2.70 g/sm³",
+                 "240 °C da parchalanadi",
+                 "Titrlash, suvni tozalash, dezinfeksiya.",
+                 "Kuchli oksidlovchi; hamma narsaga binafsha-jigarrang dog' qoldiradi."),
+        Compound("K2Cr2O7", "Kaliy dixromat", "xrompik", "qattiq", "2.68 g/sm³", "398 °C",
+                 "Oksidlovchi titrlash, teri oshlash.", "Kanserogen; ehtiyot bo'ling."),
+        Compound("NaHCO3", "Natriy gidrokarbonat", "ichimlik sodasi", "qattiq", "2.20 g/sm³",
+                 "50 °C da parchalanadi", "Non yopish, antatsid, yong'inni o'chirish.",
+                 "Oddiy sharoitda xavfsiz."),
+        Compound("Na2CO3", "Natriy karbonat", "kir sodasi, kalsinatsiyalangan soda", "qattiq",
+                 "2.54 g/sm³", "851 °C", "Shisha, yuvish vositalari, suvni yumshatish.",
+                 "Ko'z va terini ta'sirlaydi."),
+        Compound("SO2", "Oltingugurt dioksid", "oltingugurt gazi", "gaz", "2.63 g/L", "-72 °C",
+                 "Sulfat kislota xomashyosi, konservant.",
+                 "Bo'g'adi; astmani qo'zg'atadi; kislotali yomg'ir hosil qiladi."),
+        Compound("SO3", "Oltingugurt trioksid", "", "suyuq", "1.92 g/sm³", "17 °C",
+                 "Sulfat kislota ishlab chiqarish.",
+                 "Suvni shiddat bilan tortadi; og'ir kuyish."),
+        Compound("NO2", "Azot dioksid", "", "gaz", "1.88 g/L", "-11 °C",
+                 "Nitrat kislota oraliq mahsuloti.",
+                 "Jigarrang, zaharli; o'pka to'qimasini shikastlaydi."),
+        Compound("ZnCl2", "Rux xlorid", "", "qattiq", "2.91 g/sm³", "290 °C",
+                 "Kavsharlash flyusi, yog'ochni himoyalash.", "Korroziy."),
+        Compound("MgO", "Magniy oksid", "magneziya", "qattiq", "3.58 g/sm³", "2852 °C",
+                 "O'tga chidamli g'ishtlar, antatsidlar.", "Changi ta'sirlaydi."),
+        Compound("Al2O3", "Alyuminiy oksid", "alyumina, korund", "qattiq", "3.99 g/sm³", "2072 °C",
+                 "Alyuminiy olish, abrazivlar, keramika.", "Changi ta'sirlaydi."),
+        Compound("CH3COOH", "Etan kislota", "sirka kislota, sirka", "suyuq", "1.05 g/sm³", "17 °C",
+                 "Sirka, erituvchi, plastmassa.", "Konsentrlangan holda korroziy."),
+        Compound("NH4Cl", "Ammoniy xlorid", "novshadil", "qattiq", "1.53 g/sm³",
+                 "338 °C da sublimatsiyalanadi", "Quruq batareyalar, flyus, o'g'it.",
+                 "Ta'sirlovchi."),
+        Compound("BaSO4", "Bariy sulfat", "", "qattiq", "4.49 g/sm³", "1580 °C",
+                 "Rentgen kontrasti, burg'ilash eritmasi, pigment.",
+                 "Erimaydi, shuning uchun zaharsiz — eruvchan bariy tuzlari esa zaharli."),
+        Compound("PbI2", "Qo'rg'oshin(II) yodid", "", "qattiq", "6.16 g/sm³", "402 °C",
+                 "\"Oltin yomg'ir\" tajribasi, detektorlar.",
+                 "Zaharli; qo'rg'oshin organizmda to'planadi."),
     )
 }
 
 
 def normalise_key(formula: str) -> str:
-    """Strip charge and hydrate notation to match the lookup table."""
+    """Jadvaldagi kalit bilan mos kelishi uchun zaryad va gidrat belgilarini olib tashlaydi."""
     return re.sub(r"\^.*$", "", formula.strip())
 
 
 def lookup(formula: str) -> Compound | None:
-    """Find curated data for a formula, if it is in the table."""
+    """Formula jadvalda bo'lsa, u haqidagi ma'lumotni topadi."""
     return COMPOUNDS.get(normalise_key(formula))
 
 
 def search(term: str) -> list[Compound]:
-    """Find compounds by formula, systematic name or common name."""
+    """Birikmalarni formulasi, sistematik nomi yoki oddiy nomi bo'yicha qidiradi."""
     term = term.strip().lower()
     if not term:
         return sorted(COMPOUNDS.values(), key=lambda c: c.name)
@@ -185,7 +204,7 @@ def search(term: str) -> list[Compound]:
 
 
 def polyatomic_ions_in(formula: str) -> list[str]:
-    """Polyatomic ions written intact inside a formula, longest first."""
+    """Formula ichida butun holda yozilgan murakkab ionlar, eng uzunidan boshlab."""
     found: list[str] = []
     for ion in sorted(POLYATOMIC_IONS, key=len, reverse=True):
         if ion in formula and not any(ion in seen for seen in found):
@@ -194,11 +213,12 @@ def polyatomic_ions_in(formula: str) -> list[str]:
 
 
 def name_from_formula(formula: str, composition: dict[str, int], charge: int = 0) -> str | None:
-    """Apply the ordinary naming rules to a formula not in the table.
+    """Jadvalda yo'q formulaga oddiy nomlash qoidalarini qo'llaydi.
 
-    Handles binary ionic compounds (with a Roman numeral where the metal has
-    more than one common oxidation state) and binary covalent compounds
-    (with Greek prefixes). Returns ``None`` when no rule applies.
+    Ikkilamchi ionli birikmalar (metallning bir nechta oksidlanish darajasi
+    bo'lsa, rim raqami bilan) va ikkilamchi kovalent birikmalar (grek
+    old qo'shimchalari bilan) qo'llab-quvvatlanadi. Hech bir qoida mos
+    kelmasa ``None`` qaytaradi.
     """
     known = lookup(formula)
     if known:
@@ -216,7 +236,7 @@ def name_from_formula(formula: str, composition: dict[str, int], charge: int = 0
     stem = _ANION_STEMS.get(second)
     if stem is None:
         return None
-    anion = f"{stem}ide"
+    anion = f"{stem}id"
     if first in _METALS:
         cation = ELEMENTS[first].name
         states = ELEMENTS[first].oxidation_states
@@ -232,12 +252,13 @@ def name_from_formula(formula: str, composition: dict[str, int], charge: int = 0
     if first_prefix == "mono":
         first_prefix = ""
     head = f"{first_prefix}{ELEMENTS[first].name.lower()}"
-    tail = f"{second_prefix}{anion}".replace("aox", "ox").replace("oox", "ox")
+    # "mono" + "oksid" ikkita unlini yonma-yon qo'yadi; o'zbekcha shakli "monoksid".
+    tail = f"{second_prefix}{anion}".replace("monooks", "monoks")
     return f"{head} {tail}".capitalize()
 
 
 def _name_with_polyatomic(formula: str, composition: dict[str, int]) -> str | None:
-    """Name a salt built from a metal and a recognised polyatomic ion."""
+    """Metall va tanilgan murakkab iondan tuzilgan tuzni nomlaydi."""
     match = re.match(r"^([A-Z][a-z]?)\d*", formula)
     if not match or match.group(1) not in _METALS:
         return None
@@ -250,7 +271,7 @@ def _name_with_polyatomic(formula: str, composition: dict[str, int]) -> str | No
 
 
 def _ordered_pair(composition: dict[str, int]) -> list[tuple[str, int]]:
-    """Cation-like element first, matching how formulas are written."""
+    """Kationga o'xshash element birinchi — formulalar shunday yoziladi."""
     items = list(composition.items())
     if items[0][0] in _METALS or items[1][0] not in _METALS:
         return items

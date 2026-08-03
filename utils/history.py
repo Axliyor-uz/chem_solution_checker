@@ -1,7 +1,7 @@
-"""A record of what the student has already checked.
+"""O'quvchi allaqachon tekshirgan ishlar yozuvi.
 
-History lives in Streamlit's session state, so nothing is written to disk
-without the student choosing to export it.
+Tarix Streamlit sessiya holatida saqlanadi, ya'ni o'quvchi eksport qilishni
+tanlamaguncha diskka hech narsa yozilmaydi.
 """
 
 from __future__ import annotations
@@ -16,10 +16,16 @@ import streamlit as st
 STATE_KEY: Final[str] = "history"
 MAX_ENTRIES: Final[int] = 200
 
+#: Oy nomlari — ``strftime`` mahalliylashtirishga tayanmasligi uchun qo'lda berilgan.
+MONTHS_SHORT: Final[tuple[str, ...]] = (
+    "yan", "fev", "mar", "apr", "may", "iyn",
+    "iyl", "avg", "sen", "okt", "noy", "dek",
+)
+
 
 @dataclass(slots=True)
 class HistoryEntry:
-    """One checked equation."""
+    """Tekshirilgan bitta tenglama."""
 
     timestamp: str
     source: str
@@ -35,7 +41,8 @@ class HistoryEntry:
 
     @property
     def when(self) -> str:
-        return self.moment.strftime("%d %b %H:%M")
+        moment = self.moment
+        return f"{moment.day} {MONTHS_SHORT[moment.month - 1]} {moment:%H:%M}"
 
     def matches(self, term: str) -> bool:
         term = term.strip().lower()
@@ -64,7 +71,7 @@ def record(
     reaction_types: list[str] | None = None,
     notes: str = "",
 ) -> HistoryEntry:
-    """Add an entry, skipping an immediate duplicate of the last one."""
+    """Yozuv qo'shadi; oxirgi yozuvning aynan takrori bo'lsa, uni almashtiradi."""
     entries = _store()
     entry = HistoryEntry(
         timestamp=datetime.now().isoformat(timespec="seconds"),
@@ -84,42 +91,42 @@ def record(
 
 
 def all_entries() -> list[HistoryEntry]:
-    """Every entry, newest first."""
+    """Barcha yozuvlar, eng yangisi birinchi."""
     return list(_store())
 
 
 def search(term: str) -> list[HistoryEntry]:
-    """Entries matching a search term across every field."""
+    """Barcha maydonlar bo'yicha qidiruv so'roviga mos yozuvlar."""
     return [entry for entry in _store() if entry.matches(term)]
 
 
 def delete(index: int) -> None:
-    """Remove one entry by position."""
+    """Bitta yozuvni o'rni bo'yicha o'chiradi."""
     entries = _store()
     if 0 <= index < len(entries):
         entries.pop(index)
 
 
 def clear() -> None:
-    """Remove every entry."""
+    """Barcha yozuvlarni o'chiradi."""
     st.session_state[STATE_KEY] = []
 
 
 def to_json() -> str:
-    """The whole history as JSON."""
+    """Butun tarix JSON ko'rinishida."""
     return json.dumps([entry.to_dict() for entry in _store()], indent=2)
 
 
 def to_rows() -> list[dict[str, Any]]:
-    """Flat rows for a table or CSV export."""
+    """Jadval yoki CSV eksporti uchun yassi qatorlar."""
     return [
         {
-            "Checked at": entry.when,
-            "Typed": entry.source,
-            "Read as": entry.equation,
-            "Balanced": entry.balanced,
-            "Result": entry.status,
-            "Reaction types": ", ".join(entry.reaction_types),
+            "Tekshirilgan vaqt": entry.when,
+            "Yozilgani": entry.source,
+            "O'qilgani": entry.equation,
+            "Muvozanatlangani": entry.balanced,
+            "Natija": entry.status,
+            "Reaksiya turlari": ", ".join(entry.reaction_types),
         }
         for entry in _store()
     ]

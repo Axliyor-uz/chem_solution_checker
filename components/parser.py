@@ -1,9 +1,9 @@
-"""Turn typed text into chemistry objects.
+"""Yozilgan matnni kimyoviy obyektlarga aylantiradi.
 
-The grammar accepted here is deliberately forgiving of how students actually
-write equations — ``2H2O(l)``, ``SO4^2-``, ``SO42-``, ``Ca(OH)2``,
-``CuSO4*5H2O`` — while still refusing anything genuinely ambiguous. Every
-failure raises :class:`ParseError` carrying a message a student can act on.
+Bu yerdagi grammatika o'quvchilar tenglamani amalda qanday yozsa, shunga
+ataylab moslashuvchan — ``2H2O(l)``, ``SO4^2-``, ``SO42-``, ``Ca(OH)2``,
+``CuSO4*5H2O`` — ammo chinakam ikkima'noli yozuvni baribir rad etadi. Har bir
+xatolik o'quvchi tushunadigan xabar bilan :class:`ParseError` ni ko'taradi.
 """
 
 from __future__ import annotations
@@ -23,12 +23,12 @@ _TRAILING_STATE: Final[re.Pattern[str]] = re.compile(r"^\((s|l|g|aq)\)", re.IGNO
 
 
 class ParseError(ValueError):
-    """Raised when input cannot be read as chemistry.
+    """Kiritilgan matnni kimyo sifatida o'qib bo'lmaganda ko'tariladi.
 
     Args:
-        message: What is wrong, in plain language.
-        position: Character offset in the offending token, if known.
-        suggestion: A corrected version the student can accept.
+        message: Nima noto'g'ri ekani, sodda tilda.
+        position: Xato tokendagi belgi o'rni, agar ma'lum bo'lsa.
+        suggestion: O'quvchi qabul qilishi mumkin bo'lgan to'g'rilangan variant.
     """
 
     def __init__(self, message: str, position: int | None = None, suggestion: str | None = None):
@@ -40,7 +40,7 @@ class ParseError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class Formula:
-    """A single chemical formula: its composition and its net charge."""
+    """Bitta kimyoviy formula: tarkibi va umumiy zaryadi."""
 
     raw: str
     composition: dict[str, int]
@@ -48,12 +48,12 @@ class Formula:
 
     @property
     def display(self) -> str:
-        """The formula typeset with subscripts and superscripts."""
+        """Pastki va yuqori indekslar bilan terilgan formula."""
         return to_display(self.raw)
 
     @property
     def molar_mass(self) -> float:
-        """Molar mass in g/mol, summed from standard atomic weights."""
+        """Molyar massa, g/mol — standart atom massalari yig'indisi."""
         return sum(ELEMENTS[symbol].mass * count for symbol, count in self.composition.items())
 
     @property
@@ -62,11 +62,11 @@ class Formula:
 
     @property
     def is_single_element(self) -> bool:
-        """True for free elements such as ``Fe``, ``O2`` or ``S8``."""
+        """``Fe``, ``O2`` yoki ``S8`` kabi erkin elementlar uchun True."""
         return len(self.composition) == 1 and self.charge == 0
 
     def mass_contributions(self) -> list[tuple[str, int, float, float]]:
-        """Per-element ``(symbol, count, subtotal, percent)`` breakdown."""
+        """Har bir element uchun ``(belgi, soni, ulush, foiz)`` taqsimoti."""
         total = self.molar_mass
         rows: list[tuple[str, int, float, float]] = []
         for symbol, count in sorted(self.composition.items()):
@@ -81,7 +81,7 @@ class Formula:
 
 @dataclass(frozen=True, slots=True)
 class Species:
-    """A formula as it appears in an equation: coefficient, formula, state."""
+    """Formula tenglamadagi ko'rinishida: koeffitsiyent, formula, holat."""
 
     coefficient: int
     formula: Formula
@@ -101,7 +101,7 @@ class Species:
         return f"{prefix}{self.formula.raw}{suffix}"
 
     def atoms(self) -> dict[str, int]:
-        """Composition scaled by the coefficient."""
+        """Koeffitsiyentga ko'paytirilgan tarkib."""
         return {s: c * self.coefficient for s, c in self.formula.composition.items()}
 
     @property
@@ -114,7 +114,7 @@ class Species:
 
 @dataclass(slots=True)
 class Equation:
-    """A complete reaction, both sides parsed."""
+    """To'liq reaksiya — ikkala tomoni ham tahlil qilingan."""
 
     reactants: list[Species]
     products: list[Species]
@@ -148,7 +148,7 @@ class Equation:
 
     @property
     def elements(self) -> list[str]:
-        """Every element present, ordered by atomic number."""
+        """Ishtirok etayotgan barcha elementlar, tartib raqami bo'yicha."""
         found = {symbol for s in self.species for symbol in s.formula.composition}
         return sorted(found, key=lambda symbol: ELEMENTS[symbol].number)
 
@@ -157,10 +157,10 @@ class Equation:
         return any(s.formula.charge for s in self.species)
 
     def with_coefficients(self, coefficients: list[int]) -> "Equation":
-        """Return a copy carrying new coefficients, reactants then products."""
+        """Yangi koeffitsiyentli nusxa qaytaradi: avval reagentlar, keyin mahsulotlar."""
         expected = len(self.species)
         if len(coefficients) != expected:
-            raise ValueError(f"Expected {expected} coefficients, got {len(coefficients)}.")
+            raise ValueError(f"{expected} ta koeffitsiyent kutilgandi, {len(coefficients)} ta keldi.")
         split = len(self.reactants)
         return Equation(
             reactants=[s.with_coefficient(c) for s, c in zip(self.reactants, coefficients[:split])],
@@ -172,28 +172,28 @@ class Equation:
 
 
 class ChemicalParser:
-    """Reads formulas, species and equations from text."""
+    """Matndan formula, modda va tenglamalarni o'qiydi."""
 
     # ---------------------------------------------------------------- formulas
 
     def parse_formula(self, text: str) -> Formula:
-        """Parse a bare formula, optionally with a charge or hydrate dot.
+        """Formulani o'qiydi; zaryad yoki gidrat nuqtasi ham bo'lishi mumkin.
 
         Args:
-            text: Something like ``Ca(OH)2``, ``SO4^2-`` or ``CuSO4*5H2O``.
+            text: ``Ca(OH)2``, ``SO4^2-`` yoki ``CuSO4*5H2O`` kabi matn.
 
         Returns:
-            The parsed :class:`Formula`.
+            O'qilgan :class:`Formula`.
 
         Raises:
-            ParseError: If the text is not a readable formula.
+            ParseError: Matn o'qib bo'ladigan formula bo'lmasa.
         """
         raw = normalize_input(text).replace(" ", "")
         if not raw:
-            raise ParseError("Enter a formula first.")
+            raise ParseError("Avval formula kiriting.")
         body, charge = self._split_charge(raw)
         if not body:
-            raise ParseError("A charge needs a formula in front of it.")
+            raise ParseError("Zaryaddan oldin formula turishi kerak.")
         self._check_brackets(body)
         composition: dict[str, int] = {}
         try:
@@ -204,7 +204,8 @@ class ChemicalParser:
             fixed = repair_capitalisation(body)
             if fixed:
                 raise ParseError(
-                    f"Element capitalization is incorrect in '{body}'. Did you mean '{fixed}'?",
+                    f"'{body}' da element belgilari katta-kichik harfda noto'g'ri yozilgan. "
+                    f"'{fixed}' ni nazarda tutdingizmi?",
                     error.position,
                     suggestion=fixed,
                 ) from error
@@ -212,20 +213,20 @@ class ChemicalParser:
         return Formula(raw=body + charge_suffix(charge), composition=composition, charge=charge)
 
     def parse_species(self, text: str) -> Species:
-        """Parse one term of an equation, e.g. ``2H2O(l)`` or ``3Fe^3+``."""
+        """Tenglamaning bitta hadini o'qiydi, masalan ``2H2O(l)`` yoki ``3Fe^3+``."""
         raw = normalize_input(text).replace(" ", "")
         if not raw:
-            raise ParseError("Empty term — check for a stray '+'.")
+            raise ParseError("Bo'sh had — ortiqcha '+' bor-yo'qligini tekshiring.")
         body, state = split_state(raw)
         if state is None and (bad := re.search(r"\(([A-Za-z]{1,3})\)$", body)):
             raise ParseError(
-                f"'{bad.group(1)}' is not a physical state. Use (s), (l), (g) or (aq).",
+                f"'{bad.group(1)}' fizik holat emas. (s), (l), (g) yoki (aq) dan foydalaning.",
                 suggestion=None,
             )
         match = re.match(r"^(\d+)(?=[A-Za-z(\[{])", body)
         coefficient = int(match.group(1)) if match else 1
         if coefficient == 0:
-            raise ParseError("A coefficient of 0 removes the species — use 1 or more.")
+            raise ParseError("0 koeffitsiyenti moddani yo'q qiladi — 1 yoki undan katta son yozing.")
         remainder = body[match.end():] if match else body
         formula = self.parse_formula(remainder)
         return Species(coefficient=coefficient, formula=formula, state=state, raw=raw)
@@ -233,25 +234,25 @@ class ChemicalParser:
     # --------------------------------------------------------------- equations
 
     def parse_equation(self, text: str) -> Equation:
-        """Parse a full reaction.
+        """To'liq reaksiyani o'qiydi.
 
         Raises:
-            ParseError: If no arrow is present or either side is unreadable.
+            ParseError: Strelka bo'lmasa yoki biror tomonini o'qib bo'lmasa.
         """
         normalized = normalize_input(text)
         if not normalized:
-            raise ParseError("Enter an equation, for example H2 + O2 -> H2O.")
+            raise ParseError("Tenglama kiriting, masalan H2 + O2 -> H2O.")
         reversible = "<->" in normalized
         arrow = "<->" if reversible else "->"
         if arrow not in normalized:
             raise ParseError(
-                "No reaction arrow found. Separate reactants and products with -> or ⇌."
+                "Reaksiya strelkasi topilmadi. Reagentlar va mahsulotlarni -> yoki ⇌ bilan ajrating."
             )
         if normalized.count(arrow) > 1:
-            raise ParseError("An equation may only have one reaction arrow.")
+            raise ParseError("Tenglamada faqat bitta reaksiya strelkasi bo'lishi mumkin.")
         left_text, right_text = normalized.split(arrow)
-        reactants = self._parse_side(left_text, "left")
-        products = self._parse_side(right_text, "right")
+        reactants = self._parse_side(left_text, "chap")
+        products = self._parse_side(right_text, "o'ng")
         return Equation(
             reactants=reactants,
             products=products,
@@ -262,14 +263,14 @@ class ChemicalParser:
     def _parse_side(self, text: str, side: str) -> list[Species]:
         text = text.strip()
         if not text:
-            raise ParseError(f"The {side} side of the arrow is empty.")
+            raise ParseError(f"Strelkaning {side} tomoni bo'sh.")
         return [self.parse_species(term) for term in self.split_terms(text)]
 
     @staticmethod
     def split_terms(side: str) -> list[str]:
-        """Split one side on ``+``, without cutting a charge in half.
+        """Bir tomonni ``+`` bo'yicha ajratadi, zaryadni ikkiga bo'lib yubormay.
 
-        ``Na+ + Cl-`` is two terms; ``Na+(aq)`` is one.
+        ``Na+ + Cl-`` ikkita had; ``Na+(aq)`` esa bitta.
         """
         terms: list[str] = []
         current: list[str] = []
@@ -279,9 +280,9 @@ class ChemicalParser:
                 continue
             rest = side[index + 1:]
             stripped = rest.lstrip()
-            # A charge is always written against the formula ("Fe3+", never
-            # "Fe3 +"), so a '+' with a space in front of it can only be a
-            # separator — including when what follows is another '+'.
+            # Zaryad doim formulaga yopishib yoziladi ("Fe3+", hech qachon
+            # "Fe3 +" emas), shuning uchun oldida bo'sh joy turgan '+' faqat
+            # ajratgich bo'la oladi — undan keyin yana '+' kelsa ham.
             spaced = index > 0 and side[index - 1].isspace()
             is_separator = spaced or (
                 bool(stripped)
@@ -297,30 +298,30 @@ class ChemicalParser:
         terms.append("".join(current))
         cleaned = [term.strip() for term in terms]
         if any(not term for term in cleaned):
-            raise ParseError("Two '+' signs in a row, or a '+' with nothing after it.")
+            raise ParseError("Ketma-ket ikkita '+' belgisi yoki oxirida yolg'iz qolgan '+'.")
         return cleaned
 
     # ----------------------------------------------------------------- helpers
 
     @staticmethod
     def _split_charge(text: str) -> tuple[str, int]:
-        """Separate a trailing charge from the formula body.
+        """Oxiridagi zaryadni formula tanasidan ajratadi.
 
-        ``n+`` written without a caret is ambiguous: in ``Cu2+`` the 2 is the
-        charge, in ``NH4+`` it is a subscript. The rules applied here, in
-        order, match how the notation is used in practice:
+        Ustki belgisiz yozilgan ``n+`` ikkima'noli: ``Cu2+`` da 2 — zaryad,
+        ``NH4+`` da esa pastki indeks. Quyidagi qoidalar shu tartibda
+        qo'llanadi va yozuvning amaldagi ishlatilishiga mos keladi:
 
-        1. ``^`` marks the charge explicitly and always wins.
-        2. Sign-first (``Fe+3``, ``SO4-2``) is always a charge.
-        3. ``n+`` after a lone element symbol is a charge (``Cu2+`` → Cu²⁺).
-        4. ``mn+`` with two or more digits splits: the last digit is the
-           charge, the rest a subscript (``SO42-`` → SO₄²⁻).
-        5. A single digit otherwise stays a subscript (``NH4+`` → NH₄⁺).
+        1. ``^`` zaryadni aniq belgilaydi va doim ustun turadi.
+        2. Avval ishora kelsa (``Fe+3``, ``SO4-2``) — bu doim zaryad.
+        3. Yolg'iz element belgisidan keyingi ``n+`` — zaryad (``Cu2+`` → Cu²⁺).
+        4. Ikki va undan ortiq raqamli ``mn+`` bo'linadi: oxirgi raqam zaryad,
+           qolgani pastki indeks (``SO42-`` → SO₄²⁻).
+        5. Aks holda bitta raqam pastki indeks bo'lib qoladi (``NH4+`` → NH₄⁺).
         """
         if "^" in text:
             body, _, charge_text = text.rpartition("^")
             if not charge_text:
-                raise ParseError("A '^' must be followed by a charge such as 2+ or -.")
+                raise ParseError("'^' dan keyin zaryad kelishi kerak, masalan 2+ yoki -.")
             return body, ChemicalParser._read_charge(charge_text)
 
         sign_first = re.search(r"([+-])(\d+)$", text)
@@ -334,13 +335,13 @@ class ChemicalParser:
         digits, signs = match.group(1), match.group(2)
         stem = text[: match.start()]
         if len(set(signs)) > 1:
-            raise ParseError("Mixed '+' and '-' in one charge. Write 2+ or 2-, not both.")
+            raise ParseError("Bitta zaryadda '+' va '-' aralashgan. 2+ yoki 2- deb yozing, ikkalasini emas.")
         sign = 1 if signs[0] == "+" else -1
         if not digits:
             return stem, sign * len(signs)
         if len(signs) > 1:
             raise ParseError(
-                f"Write this charge either as {digits}{signs[0]} or as {signs}, not both."
+                f"Bu zaryadni yo {digits}{signs[0]} deb, yo {signs} deb yozing — ikkalasini birga emas."
             )
         if re.fullmatch(r"[A-Z][a-z]?", stem) and stem in ELEMENTS:
             return stem, sign * int(digits)
@@ -350,7 +351,7 @@ class ChemicalParser:
 
     @staticmethod
     def _read_charge(text: str) -> int:
-        """Read ``2+``, ``+2``, ``++`` or ``-`` as a signed integer."""
+        """``2+``, ``+2``, ``++`` yoki ``-`` ni ishorali butun son sifatida o'qiydi."""
         text = text.strip()
         if not text:
             return 0
@@ -361,7 +362,7 @@ class ChemicalParser:
         match = re.fullmatch(r"(\d+)([+-])|([+-])(\d+)", text)
         if not match:
             raise ParseError(
-                f"'{text}' is not a valid charge. Write it as 2+, 3-, + or ^2-.",
+                f"'{text}' to'g'ri zaryad emas. Uni 2+, 3-, + yoki ^2- ko'rinishida yozing.",
             )
         magnitude = match.group(1) or match.group(4)
         sign = match.group(2) or match.group(3)
@@ -378,20 +379,20 @@ class ChemicalParser:
                 stack.append((char, index))
             elif char in _CLOSE_TO_OPEN:
                 if not stack:
-                    raise ParseError(f"Closing '{char}' has no matching opening bracket.", index)
+                    raise ParseError(f"Yopuvchi '{char}' uchun ochuvchi qavs yo'q.", index)
                 opener, _ = stack.pop()
                 if _OPEN_TO_CLOSE[opener] != char:
-                    raise ParseError(f"'{opener}' is closed by '{char}'.", index)
+                    raise ParseError(f"'{opener}' qavsi '{char}' bilan yopilgan.", index)
         if stack:
             opener, index = stack[-1]
-            raise ParseError(f"'{opener}' is never closed.", index)
+            raise ParseError(f"'{opener}' qavsi yopilmagan.", index)
 
     @staticmethod
     def _split_hydrate(text: str) -> Iterator[tuple[int, str]]:
-        """Split ``CuSO4*5H2O`` into ``(1, 'CuSO4')`` and ``(5, 'H2O')``."""
+        """``CuSO4*5H2O`` ni ``(1, 'CuSO4')`` va ``(5, 'H2O')`` ga ajratadi."""
         for part in text.split("*"):
             if not part:
-                raise ParseError("A hydrate dot needs a formula on both sides.")
+                raise ParseError("Gidrat nuqtasining ikkala tomonida ham formula bo'lishi kerak.")
             match = re.match(r"^(\d+)", part)
             if match:
                 yield int(match.group(1)), part[match.end():]
@@ -399,7 +400,7 @@ class ChemicalParser:
                 yield 1, part
 
     def _parse_body(self, text: str, start: int, end: int) -> dict[str, int]:
-        """Recursively read a bracket-free-or-nested formula segment."""
+        """Qavssiz yoki ichma-ich qavsli formula bo'lagini rekursiv o'qiydi."""
         composition: dict[str, int] = {}
         index = start
         while index < end:
@@ -418,13 +419,13 @@ class ChemicalParser:
                 continue
             if char.isdigit():
                 raise ParseError(
-                    f"Unexpected number at position {index + 1}. "
-                    "Numbers belong after an element symbol or bracket.",
+                    f"{index + 1}-o'rinda kutilmagan raqam. "
+                    "Raqamlar element belgisidan yoki qavsdan keyin keladi.",
                     index,
                 )
-            raise ParseError(f"'{char}' does not belong in a formula.", index)
+            raise ParseError(f"'{char}' formulada ishlatilmaydi.", index)
         if not composition:
-            raise ParseError("No elements found in this formula.")
+            raise ParseError("Bu formulada element topilmadi.")
         return composition
 
     @staticmethod
@@ -437,11 +438,11 @@ class ChemicalParser:
                 depth -= 1
                 if depth == 0:
                     return index
-        raise ParseError(f"'{text[start]}' is never closed.", start)
+        raise ParseError(f"'{text[start]}' qavsi yopilmagan.", start)
 
     @staticmethod
     def _read_symbol(text: str, index: int, end: int) -> tuple[str, int]:
-        """Read one element symbol, longest match first."""
+        """Bitta element belgisini o'qiydi, avval eng uzun moslikni sinaydi."""
         two = text[index: index + 2]
         if len(two) == 2 and two in ELEMENTS and index + 2 <= end:
             return two, index + 2
@@ -453,12 +454,12 @@ class ChemicalParser:
         corrected = resolve_case(token) or resolve_case(token[0])
         if corrected:
             raise ParseError(
-                f"'{token}' is not an element symbol. Element capitalization is incorrect — "
-                f"did you mean '{corrected}'?",
+                f"'{token}' element belgisi emas. Katta-kichik harf noto'g'ri — "
+                f"'{corrected}' ni nazarda tutdingizmi?",
                 index,
                 suggestion=repair_capitalisation(text),
             )
-        raise ParseError(f"'{token}' is not a known element symbol.", index)
+        raise ParseError(f"'{token}' tanish element belgisi emas.", index)
 
     @staticmethod
     def _read_count(text: str, index: int, end: int) -> tuple[int, int]:
@@ -469,12 +470,12 @@ class ChemicalParser:
             return index, 1
         value = int(text[start:index])
         if value == 0:
-            raise ParseError("A subscript of 0 means the element is absent — remove it.", start)
+            raise ParseError("0 pastki indeksi element yo'q degani — uni olib tashlang.", start)
         return index, value
 
 
 def charge_suffix(charge: int) -> str:
-    """Render a charge in canonical caret notation: ``^2-``, ``^+``, or ``""``."""
+    """Zaryadni kanonik ``^`` yozuvida qaytaradi: ``^2-``, ``^+`` yoki ``""``."""
     if charge == 0:
         return ""
     sign = "+" if charge > 0 else "-"
@@ -483,10 +484,10 @@ def charge_suffix(charge: int) -> str:
 
 
 def repair_capitalisation(text: str) -> str | None:
-    """Re-case a formula whose letters are right but whose capitals are not.
+    """Harflari to'g'ri, lekin katta-kichikligi noto'g'ri formulani to'g'rilaydi.
 
-    ``FE2o3`` becomes ``Fe2O3``. Returns ``None`` when no segmentation of the
-    letters into real element symbols exists.
+    ``FE2o3`` → ``Fe2O3``. Harflarni haqiqiy element belgilariga bo'lishning
+    imkoni bo'lmasa ``None`` qaytaradi.
     """
     out: list[str] = []
     changed = False
@@ -504,11 +505,11 @@ def repair_capitalisation(text: str) -> str | None:
 
 
 def _segment_symbols(letters: str) -> list[str] | None:
-    """Split a letter run into element symbols, ignoring case.
+    """Harflar ketma-ketligini element belgilariga ajratadi, harf kattaligiga qaramay.
 
-    ``caco`` can be read as Ca+Co or Ca+C+O, and only one of those is a real
-    compound. Ambiguity is settled by preferring the lighter elements, since
-    the elements a student writes are overwhelmingly the common light ones.
+    ``caco`` ni Ca+Co yoki Ca+C+O deb o'qish mumkin, ammo faqat bittasi haqiqiy
+    birikma. Ikkima'nolik yengilroq elementlar foydasiga hal qilinadi, chunki
+    o'quvchi yozadigan elementlar deyarli har doim keng tarqalgan yengil elementlar.
     """
     candidates = _all_segmentations(letters)
     if not candidates:
@@ -520,10 +521,10 @@ def _segment_symbols(letters: str) -> list[str] | None:
 
 
 def _all_segmentations(letters: str, depth: int = 0) -> list[list[str]]:
-    """Every way to read a letter run as element symbols, case-insensitively."""
+    """Harflar ketma-ketligini element belgilari sifatida o'qishning barcha variantlari."""
     if not letters:
         return [[]]
-    if depth > 12:  # Long runs fall back to the greedy two-letter-first reading.
+    if depth > 12:  # Uzun ketma-ketliklar uchun avval ikki harfli ochko'z o'qishga o'tiladi.
         greedy = resolve_case(letters[:2]) or resolve_case(letters[:1])
         if greedy is None:
             return []
@@ -541,5 +542,5 @@ def _all_segmentations(letters: str, depth: int = 0) -> list[list[str]]:
     return found
 
 
-#: Shared, stateless parser instance.
+#: Umumiy, holatsiz parser namunasi.
 parser: Final[ChemicalParser] = ChemicalParser()

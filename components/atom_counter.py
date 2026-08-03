@@ -1,7 +1,7 @@
-"""Counting atoms and charge on each side of an equation.
+"""Tenglamaning har ikki tomonidagi atom va zaryadni sanaydi.
 
-Everything the checker says about balance ultimately comes from this module,
-so the counting is kept separate from the judging.
+Tekshirgichning muvozanat haqidagi barcha xulosasi shu moduldan kelib
+chiqadi, shuning uchun sanash baho berishdan alohida saqlangan.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from data.elements import ELEMENTS
 
 @dataclass(frozen=True, slots=True)
 class AtomRow:
-    """One element's tally across the arrow."""
+    """Bitta elementning strelka bo'ylab hisobi."""
 
     element: str
     left: int
@@ -23,7 +23,7 @@ class AtomRow:
 
     @property
     def difference(self) -> int:
-        """Right minus left: positive means the product side has a surplus."""
+        """O'ng minus chap: musbat bo'lsa, mahsulotlar tomonida ortiqcha bor."""
         return self.right - self.left
 
     @property
@@ -32,18 +32,18 @@ class AtomRow:
 
     @property
     def verdict(self) -> str:
-        return "correct" if self.balanced else "incorrect"
+        return "to'g'ri" if self.balanced else "noto'g'ri"
 
     @property
     def short_note(self) -> str:
         if self.balanced:
-            return "balanced"
-        surplus_side = "right" if self.difference > 0 else "left"
-        return f"{abs(self.difference)} extra on the {surplus_side}"
+            return "muvozanatda"
+        surplus_side = "o'ngda" if self.difference > 0 else "chapda"
+        return f"{surplus_side} {abs(self.difference)} ta ortiq"
 
 
 def count_side(species: Iterable[Species]) -> dict[str, int]:
-    """Total atoms of each element on one side, coefficients included."""
+    """Bir tomondagi har bir element atomlari yig'indisi, koeffitsiyentlar bilan."""
     totals: dict[str, int] = {}
     for item in species:
         for symbol, count in item.atoms().items():
@@ -52,12 +52,12 @@ def count_side(species: Iterable[Species]) -> dict[str, int]:
 
 
 def charge_of_side(species: Iterable[Species]) -> int:
-    """Net charge on one side, coefficients included."""
+    """Bir tomondagi umumiy zaryad, koeffitsiyentlar bilan."""
     return sum(item.total_charge for item in species)
 
 
 def build_table(equation: Equation) -> list[AtomRow]:
-    """One :class:`AtomRow` per element, ordered by atomic number."""
+    """Har bir element uchun bitta :class:`AtomRow`, tartib raqami bo'yicha."""
     left = count_side(equation.reactants)
     right = count_side(equation.products)
     return [
@@ -67,32 +67,32 @@ def build_table(equation: Equation) -> list[AtomRow]:
 
 
 def unbalanced_rows(equation: Equation) -> list[AtomRow]:
-    """Only the rows a student still has to fix."""
+    """Faqat o'quvchi hali to'g'rilashi kerak bo'lgan qatorlar."""
     return [row for row in build_table(equation) if not row.balanced]
 
 
 def is_balanced(equation: Equation) -> bool:
-    """True when every element and the net charge match on both sides."""
+    """Har bir element va umumiy zaryad ikkala tomonda mos kelsa True."""
     if any(not row.balanced for row in build_table(equation)):
         return False
     return charge_of_side(equation.reactants) == charge_of_side(equation.products)
 
 
 def side_mass(species: Iterable[Species]) -> float:
-    """Total mass in g/mol on one side — the mass-conservation check."""
+    """Bir tomondagi umumiy massa, g/mol — massa saqlanishini tekshirish."""
     return sum(item.formula.molar_mass * item.coefficient for item in species)
 
 
 def mass_balance(equation: Equation) -> tuple[float, float]:
-    """``(reactant mass, product mass)`` in g/mol."""
+    """``(reagentlar massasi, mahsulotlar massasi)``, g/mol."""
     return side_mass(equation.reactants), side_mass(equation.products)
 
 
 def orphan_elements(equation: Equation) -> dict[str, str]:
-    """Elements appearing on only one side, mapped to the side they are on.
+    """Faqat bir tomonda uchraydigan elementlar va ular turgan tomon.
 
-    An orphan can never be balanced by coefficients alone — it means a
-    species is missing, which is a different mistake from a wrong coefficient.
+    Bunday elementni faqat koeffitsiyent bilan tenglashtirib bo'lmaydi — bu
+    modda tushib qolganini bildiradi, ya'ni noto'g'ri koeffitsiyentdan boshqa xato.
     """
     left = count_side(equation.reactants)
     right = count_side(equation.products)

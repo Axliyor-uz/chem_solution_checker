@@ -1,9 +1,9 @@
-"""The periodic table, as data.
+"""Davriy jadval — ma'lumot ko'rinishida.
 
-Only the facts that cannot be derived are stored (symbol, name, standard
-atomic weight, common oxidation states). Period, group, block, category and
-ground-state electron configuration are all computed, which keeps the table
-short enough to audit by eye.
+Faqat hisoblab bo'lmaydigan ma'lumotlar saqlanadi (belgisi, nomi, standart
+atom massasi, keng tarqalgan oksidlanish darajalari). Davr, guruh, blok,
+toifa va asosiy holatdagi elektron konfiguratsiya hisoblab chiqariladi —
+shu sababli jadvalni ko'z bilan tekshirish oson.
 """
 
 from __future__ import annotations
@@ -12,70 +12,70 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Final
 
-# (atomic number, symbol, name, standard atomic weight)
+# (tartib raqami, belgisi, nomi, standart atom massasi)
 _RAW: Final[tuple[tuple[int, str, str, float], ...]] = (
-    (1, "H", "Hydrogen", 1.008), (2, "He", "Helium", 4.0026),
-    (3, "Li", "Lithium", 6.94), (4, "Be", "Beryllium", 9.0122),
-    (5, "B", "Boron", 10.81), (6, "C", "Carbon", 12.011),
-    (7, "N", "Nitrogen", 14.007), (8, "O", "Oxygen", 15.999),
-    (9, "F", "Fluorine", 18.998), (10, "Ne", "Neon", 20.180),
-    (11, "Na", "Sodium", 22.990), (12, "Mg", "Magnesium", 24.305),
-    (13, "Al", "Aluminium", 26.982), (14, "Si", "Silicon", 28.085),
-    (15, "P", "Phosphorus", 30.974), (16, "S", "Sulfur", 32.06),
-    (17, "Cl", "Chlorine", 35.45), (18, "Ar", "Argon", 39.95),
-    (19, "K", "Potassium", 39.098), (20, "Ca", "Calcium", 40.078),
-    (21, "Sc", "Scandium", 44.956), (22, "Ti", "Titanium", 47.867),
-    (23, "V", "Vanadium", 50.942), (24, "Cr", "Chromium", 51.996),
-    (25, "Mn", "Manganese", 54.938), (26, "Fe", "Iron", 55.845),
-    (27, "Co", "Cobalt", 58.933), (28, "Ni", "Nickel", 58.693),
-    (29, "Cu", "Copper", 63.546), (30, "Zn", "Zinc", 65.38),
-    (31, "Ga", "Gallium", 69.723), (32, "Ge", "Germanium", 72.630),
-    (33, "As", "Arsenic", 74.922), (34, "Se", "Selenium", 78.971),
-    (35, "Br", "Bromine", 79.904), (36, "Kr", "Krypton", 83.798),
-    (37, "Rb", "Rubidium", 85.468), (38, "Sr", "Strontium", 87.62),
-    (39, "Y", "Yttrium", 88.906), (40, "Zr", "Zirconium", 91.224),
-    (41, "Nb", "Niobium", 92.906), (42, "Mo", "Molybdenum", 95.95),
-    (43, "Tc", "Technetium", 98.0), (44, "Ru", "Ruthenium", 101.07),
-    (45, "Rh", "Rhodium", 102.91), (46, "Pd", "Palladium", 106.42),
-    (47, "Ag", "Silver", 107.87), (48, "Cd", "Cadmium", 112.41),
-    (49, "In", "Indium", 114.82), (50, "Sn", "Tin", 118.71),
-    (51, "Sb", "Antimony", 121.76), (52, "Te", "Tellurium", 127.60),
-    (53, "I", "Iodine", 126.90), (54, "Xe", "Xenon", 131.29),
-    (55, "Cs", "Caesium", 132.91), (56, "Ba", "Barium", 137.33),
-    (57, "La", "Lanthanum", 138.91), (58, "Ce", "Cerium", 140.12),
-    (59, "Pr", "Praseodymium", 140.91), (60, "Nd", "Neodymium", 144.24),
-    (61, "Pm", "Promethium", 145.0), (62, "Sm", "Samarium", 150.36),
-    (63, "Eu", "Europium", 151.96), (64, "Gd", "Gadolinium", 157.25),
-    (65, "Tb", "Terbium", 158.93), (66, "Dy", "Dysprosium", 162.50),
-    (67, "Ho", "Holmium", 164.93), (68, "Er", "Erbium", 167.26),
-    (69, "Tm", "Thulium", 168.93), (70, "Yb", "Ytterbium", 173.05),
-    (71, "Lu", "Lutetium", 174.97), (72, "Hf", "Hafnium", 178.49),
-    (73, "Ta", "Tantalum", 180.95), (74, "W", "Tungsten", 183.84),
-    (75, "Re", "Rhenium", 186.21), (76, "Os", "Osmium", 190.23),
-    (77, "Ir", "Iridium", 192.22), (78, "Pt", "Platinum", 195.08),
-    (79, "Au", "Gold", 196.97), (80, "Hg", "Mercury", 200.59),
-    (81, "Tl", "Thallium", 204.38), (82, "Pb", "Lead", 207.2),
-    (83, "Bi", "Bismuth", 208.98), (84, "Po", "Polonium", 209.0),
-    (85, "At", "Astatine", 210.0), (86, "Rn", "Radon", 222.0),
-    (87, "Fr", "Francium", 223.0), (88, "Ra", "Radium", 226.0),
-    (89, "Ac", "Actinium", 227.0), (90, "Th", "Thorium", 232.04),
-    (91, "Pa", "Protactinium", 231.04), (92, "U", "Uranium", 238.03),
-    (93, "Np", "Neptunium", 237.0), (94, "Pu", "Plutonium", 244.0),
-    (95, "Am", "Americium", 243.0), (96, "Cm", "Curium", 247.0),
-    (97, "Bk", "Berkelium", 247.0), (98, "Cf", "Californium", 251.0),
-    (99, "Es", "Einsteinium", 252.0), (100, "Fm", "Fermium", 257.0),
-    (101, "Md", "Mendelevium", 258.0), (102, "No", "Nobelium", 259.0),
-    (103, "Lr", "Lawrencium", 266.0), (104, "Rf", "Rutherfordium", 267.0),
-    (105, "Db", "Dubnium", 268.0), (106, "Sg", "Seaborgium", 269.0),
-    (107, "Bh", "Bohrium", 270.0), (108, "Hs", "Hassium", 269.0),
-    (109, "Mt", "Meitnerium", 278.0), (110, "Ds", "Darmstadtium", 281.0),
-    (111, "Rg", "Roentgenium", 282.0), (112, "Cn", "Copernicium", 285.0),
-    (113, "Nh", "Nihonium", 286.0), (114, "Fl", "Flerovium", 289.0),
-    (115, "Mc", "Moscovium", 290.0), (116, "Lv", "Livermorium", 293.0),
-    (117, "Ts", "Tennessine", 294.0), (118, "Og", "Oganesson", 294.0),
+    (1, "H", "Vodorod", 1.008), (2, "He", "Geliy", 4.0026),
+    (3, "Li", "Litiy", 6.94), (4, "Be", "Berilliy", 9.0122),
+    (5, "B", "Bor", 10.81), (6, "C", "Uglerod", 12.011),
+    (7, "N", "Azot", 14.007), (8, "O", "Kislorod", 15.999),
+    (9, "F", "Ftor", 18.998), (10, "Ne", "Neon", 20.180),
+    (11, "Na", "Natriy", 22.990), (12, "Mg", "Magniy", 24.305),
+    (13, "Al", "Alyuminiy", 26.982), (14, "Si", "Kremniy", 28.085),
+    (15, "P", "Fosfor", 30.974), (16, "S", "Oltingugurt", 32.06),
+    (17, "Cl", "Xlor", 35.45), (18, "Ar", "Argon", 39.95),
+    (19, "K", "Kaliy", 39.098), (20, "Ca", "Kalsiy", 40.078),
+    (21, "Sc", "Skandiy", 44.956), (22, "Ti", "Titan", 47.867),
+    (23, "V", "Vanadiy", 50.942), (24, "Cr", "Xrom", 51.996),
+    (25, "Mn", "Marganets", 54.938), (26, "Fe", "Temir", 55.845),
+    (27, "Co", "Kobalt", 58.933), (28, "Ni", "Nikel", 58.693),
+    (29, "Cu", "Mis", 63.546), (30, "Zn", "Rux", 65.38),
+    (31, "Ga", "Galliy", 69.723), (32, "Ge", "Germaniy", 72.630),
+    (33, "As", "Mishyak", 74.922), (34, "Se", "Selen", 78.971),
+    (35, "Br", "Brom", 79.904), (36, "Kr", "Kripton", 83.798),
+    (37, "Rb", "Rubidiy", 85.468), (38, "Sr", "Stronsiy", 87.62),
+    (39, "Y", "Ittriy", 88.906), (40, "Zr", "Sirkoniy", 91.224),
+    (41, "Nb", "Niobiy", 92.906), (42, "Mo", "Molibden", 95.95),
+    (43, "Tc", "Texnetsiy", 98.0), (44, "Ru", "Ruteniy", 101.07),
+    (45, "Rh", "Rodiy", 102.91), (46, "Pd", "Palladiy", 106.42),
+    (47, "Ag", "Kumush", 107.87), (48, "Cd", "Kadmiy", 112.41),
+    (49, "In", "Indiy", 114.82), (50, "Sn", "Qalay", 118.71),
+    (51, "Sb", "Surma", 121.76), (52, "Te", "Tellur", 127.60),
+    (53, "I", "Yod", 126.90), (54, "Xe", "Ksenon", 131.29),
+    (55, "Cs", "Seziy", 132.91), (56, "Ba", "Bariy", 137.33),
+    (57, "La", "Lantan", 138.91), (58, "Ce", "Seriy", 140.12),
+    (59, "Pr", "Prazeodim", 140.91), (60, "Nd", "Neodim", 144.24),
+    (61, "Pm", "Prometiy", 145.0), (62, "Sm", "Samariy", 150.36),
+    (63, "Eu", "Yevropiy", 151.96), (64, "Gd", "Gadoliniy", 157.25),
+    (65, "Tb", "Terbiy", 158.93), (66, "Dy", "Disproziy", 162.50),
+    (67, "Ho", "Golmiy", 164.93), (68, "Er", "Erbiy", 167.26),
+    (69, "Tm", "Tuliy", 168.93), (70, "Yb", "Itterbiy", 173.05),
+    (71, "Lu", "Lutetsiy", 174.97), (72, "Hf", "Gafniy", 178.49),
+    (73, "Ta", "Tantal", 180.95), (74, "W", "Volfram", 183.84),
+    (75, "Re", "Reniy", 186.21), (76, "Os", "Osmiy", 190.23),
+    (77, "Ir", "Iridiy", 192.22), (78, "Pt", "Platina", 195.08),
+    (79, "Au", "Oltin", 196.97), (80, "Hg", "Simob", 200.59),
+    (81, "Tl", "Talliy", 204.38), (82, "Pb", "Qo'rg'oshin", 207.2),
+    (83, "Bi", "Vismut", 208.98), (84, "Po", "Poloniy", 209.0),
+    (85, "At", "Astat", 210.0), (86, "Rn", "Radon", 222.0),
+    (87, "Fr", "Fransiy", 223.0), (88, "Ra", "Radiy", 226.0),
+    (89, "Ac", "Aktiniy", 227.0), (90, "Th", "Toriy", 232.04),
+    (91, "Pa", "Protaktiniy", 231.04), (92, "U", "Uran", 238.03),
+    (93, "Np", "Neptuniy", 237.0), (94, "Pu", "Plutoniy", 244.0),
+    (95, "Am", "Ameritsiy", 243.0), (96, "Cm", "Kyuriy", 247.0),
+    (97, "Bk", "Berkliy", 247.0), (98, "Cf", "Kaliforniy", 251.0),
+    (99, "Es", "Eynshteyniy", 252.0), (100, "Fm", "Fermiy", 257.0),
+    (101, "Md", "Mendeleviy", 258.0), (102, "No", "Nobeliy", 259.0),
+    (103, "Lr", "Lourensiy", 266.0), (104, "Rf", "Rezerfordiy", 267.0),
+    (105, "Db", "Dubniy", 268.0), (106, "Sg", "Siborgiy", 269.0),
+    (107, "Bh", "Boriy", 270.0), (108, "Hs", "Xassiy", 269.0),
+    (109, "Mt", "Meytneriy", 278.0), (110, "Ds", "Darmshtadtiy", 281.0),
+    (111, "Rg", "Rentgeniy", 282.0), (112, "Cn", "Kopernitsiy", 285.0),
+    (113, "Nh", "Nixoniy", 286.0), (114, "Fl", "Fleroviy", 289.0),
+    (115, "Mc", "Moskoviy", 290.0), (116, "Lv", "Livermoriy", 293.0),
+    (117, "Ts", "Tennessin", 294.0), (118, "Og", "Oganeson", 294.0),
 )
 
-#: Oxidation states seen in ordinary chemistry; the most common one first.
+#: Oddiy kimyoda uchraydigan oksidlanish darajalari; eng keng tarqalgani birinchi.
 _OXIDATION_STATES: Final[dict[str, tuple[int, ...]]] = {
     "H": (1, -1), "He": (), "Li": (1,), "Be": (2,), "B": (3,),
     "C": (4, 2, -4), "N": (-3, 5, 4, 3, 2, -2), "O": (-2, -1),
@@ -94,39 +94,39 @@ _OXIDATION_STATES: Final[dict[str, tuple[int, ...]]] = {
     "Pb": (2, 4), "Bi": (3, 5), "Ra": (2,), "Th": (4,), "U": (6, 4),
 }
 
-#: Everyday context, kept to one line each.
+#: Kundalik hayotdagi o'rni, har biri bir qatorda.
 _USES: Final[dict[str, str]] = {
-    "H": "Ammonia synthesis, refining, fuel cells.",
-    "He": "Cryogenics, MRI magnets, lifting gas.",
-    "Li": "Rechargeable batteries, ceramics, mood stabilisers.",
-    "C": "Steel, plastics, every organic molecule.",
-    "N": "Fertiliser, inert atmospheres, liquid coolant.",
-    "O": "Steelmaking, medicine, combustion.",
-    "F": "Toothpaste additives, refrigerants, PTFE.",
-    "Na": "Table salt, street lighting, sodium-vapour lamps.",
-    "Mg": "Lightweight alloys, flares, chlorophyll.",
-    "Al": "Aircraft, packaging, power cables.",
-    "Si": "Semiconductors, glass, silicones.",
-    "P": "Fertiliser, matches, DNA backbone.",
-    "S": "Sulfuric acid, vulcanised rubber, fungicides.",
-    "Cl": "Water treatment, PVC, bleach.",
-    "K": "Fertiliser, glass, nerve signalling.",
-    "Ca": "Cement, bone, steel deoxidation.",
-    "Ti": "Implants, aerospace alloys, white pigment.",
-    "Cr": "Stainless steel, plating, pigments.",
-    "Mn": "Steel hardening, dry cells, permanganate.",
-    "Fe": "Steel, haemoglobin, catalysts.",
-    "Ni": "Stainless steel, plating, hydrogenation catalyst.",
-    "Cu": "Wiring, plumbing, brass and bronze.",
-    "Zn": "Galvanising, brass, dietary enzyme cofactor.",
-    "Br": "Flame retardants, photographic film, sedatives.",
-    "Ag": "Electronics, photography, antimicrobials.",
-    "I": "Antiseptics, thyroid hormones, contrast media.",
-    "Pt": "Catalytic converters, jewellery, electrodes.",
-    "Au": "Electronics contacts, jewellery, dentistry.",
-    "Hg": "Fluorescent lamps, older thermometers, amalgams.",
-    "Pb": "Car batteries, radiation shielding, older solders.",
-    "U": "Nuclear fuel, radiography sources.",
+    "H": "Ammiak sintezi, neftni qayta ishlash, yoqilg'i elementlari.",
+    "He": "Kriogenika, MRT magnitlari, ko'taruvchi gaz.",
+    "Li": "Qayta zaryadlanuvchi batareyalar, keramika, dorilar.",
+    "C": "Po'lat, plastmassa, barcha organik moddalar.",
+    "N": "O'g'it, inert muhit, suyuq sovutgich.",
+    "O": "Po'lat eritish, tibbiyot, yonish.",
+    "F": "Tish pastasi qo'shimchalari, sovutgichlar, ftoroplast.",
+    "Na": "Osh tuzi, ko'cha yoritgichlari, natriyli lampalar.",
+    "Mg": "Yengil qotishmalar, signal o't, xlorofill.",
+    "Al": "Samolyotsozlik, qadoqlash, elektr simlari.",
+    "Si": "Yarimo'tkazgichlar, shisha, silikonlar.",
+    "P": "O'g'it, gugurt, DNK zanjiri.",
+    "S": "Sulfat kislota, vulkanlangan kauchuk, fungitsidlar.",
+    "Cl": "Suvni tozalash, PVX, oqartirgich.",
+    "K": "O'g'it, shisha, nerv impulslari.",
+    "Ca": "Sement, suyak, po'latni tozalash.",
+    "Ti": "Implantlar, aviatsiya qotishmalari, oq pigment.",
+    "Cr": "Zanglamas po'lat, qoplama, pigmentlar.",
+    "Mn": "Po'latni qattiqlashtirish, batareyalar, permanganat.",
+    "Fe": "Po'lat, gemoglobin, katalizatorlar.",
+    "Ni": "Zanglamas po'lat, qoplama, gidrogenlash katalizatori.",
+    "Cu": "Elektr simlari, quvurlar, latun va bronza.",
+    "Zn": "Galvanizatsiya, latun, ferment kofaktori.",
+    "Br": "Yong'inga qarshi qo'shimchalar, foto plyonka, dorilar.",
+    "Ag": "Elektronika, fotografiya, antimikrob vositalar.",
+    "I": "Antiseptiklar, qalqonsimon bez gormonlari, kontrast moddalar.",
+    "Pt": "Katalitik neytralizatorlar, zargarlik, elektrodlar.",
+    "Au": "Elektronika kontaktlari, zargarlik, stomatologiya.",
+    "Hg": "Lyuminessent lampalar, eski termometrlar, amalgamalar.",
+    "Pb": "Avtomobil akkumulyatorlari, radiatsiyadan himoya, eski kavsharlar.",
+    "U": "Yadro yoqilg'isi, radiografiya manbalari.",
 }
 
 _CONFIG_EXCEPTIONS: Final[dict[int, str]] = {
@@ -160,7 +160,7 @@ _POST_TRANSITION: Final[frozenset[str]] = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class Element:
-    """One entry of the periodic table."""
+    """Davriy jadvalning bitta yozuvi."""
 
     number: int
     symbol: str
@@ -178,12 +178,12 @@ class Element:
 
     @property
     def electron_configuration(self) -> str:
-        """Ground-state configuration in noble-gas shorthand."""
+        """Asosiy holatdagi konfiguratsiya, inert gaz qisqartmasi bilan."""
         return self._config
 
     @property
     def valence_electrons(self) -> int | None:
-        """Outer-shell electron count, for main-group elements only."""
+        """Tashqi qavatdagi elektronlar soni — faqat asosiy guruh elementlari uchun."""
         if self.group is None or 3 <= self.group <= 12:
             return None
         return self.group if self.group <= 2 else self.group - 10
@@ -222,17 +222,17 @@ def _configuration(number: int) -> str:
         if consumed <= core_number:
             continue
         kept.append((shell, orbital, filled))
-    # Written by shell rather than by filling order: [Ar] 3d6 4s2, not 4s2 3d6.
+    # To'lish tartibida emas, qavatlar bo'yicha yoziladi: [Ar] 3d6 4s2, 4s2 3d6 emas.
     kept.sort(key=lambda item: (item[0], "spdf".index(item[1])))
     prefix = f"[{core_symbol}] " if core_symbol else ""
     return prefix + " ".join(f"{shell}{orbital}{filled}" for shell, orbital, filled in kept)
 
 
 def _position(number: int) -> tuple[int, int, int, int | None]:
-    """Return ``(period, row, column, group)`` on an 18-column layout.
+    """18 ustunli joylashuvda ``(davr, qator, ustun, guruh)`` qaytaradi.
 
-    Lanthanides and actinides are given their own rows (8 and 9) so the
-    main body of the table stays 18 columns wide.
+    Lantanoid va aktinoidlar alohida qatorlarga (8 va 9) chiqariladi, shunda
+    jadvalning asosiy qismi 18 ustunligicha qoladi.
     """
     if 57 <= number <= 71:
         return 6, 8, number - 57 + 3, None
@@ -269,24 +269,24 @@ def _block(number: int, group: int | None) -> str:
 
 def _category(symbol: str, number: int, group: int | None, block: str) -> str:
     if block == "f":
-        return "lanthanide" if number <= 71 else "actinide"
+        return "lantanoid" if number <= 71 else "aktinoid"
     if group == 18:
-        return "noble gas"
+        return "inert gaz"
     if group == 17:
-        return "halogen"
+        return "galogen"
     if group == 1 and symbol != "H":
-        return "alkali metal"
+        return "ishqoriy metall"
     if group == 2:
-        return "alkaline earth metal"
+        return "ishqoriy-yer metall"
     if symbol in _METALLOIDS:
         return "metalloid"
     if symbol in _NONMETALS:
-        return "nonmetal"
+        return "metallmas"
     if symbol in _POST_TRANSITION:
-        return "post-transition metal"
+        return "o'tishdan keyingi metall"
     if block == "d":
-        return "transition metal"
-    return "nonmetal"
+        return "o'tish metali"
+    return "metallmas"
 
 
 def _build() -> dict[str, Element]:
@@ -316,20 +316,20 @@ ELEMENTS: Final[dict[str, Element]] = _build()
 SYMBOLS: Final[frozenset[str]] = frozenset(ELEMENTS)
 BY_NUMBER: Final[dict[int, Element]] = {e.number: e for e in ELEMENTS.values()}
 CATEGORY_ORDER: Final[tuple[str, ...]] = (
-    "alkali metal", "alkaline earth metal", "transition metal",
-    "post-transition metal", "metalloid", "nonmetal", "halogen",
-    "noble gas", "lanthanide", "actinide",
+    "ishqoriy metall", "ishqoriy-yer metall", "o'tish metali",
+    "o'tishdan keyingi metall", "metalloid", "metallmas", "galogen",
+    "inert gaz", "lantanoid", "aktinoid",
 )
 
 
 def get(symbol: str) -> Element | None:
-    """Look up an element by its exact symbol."""
+    """Elementni aniq belgisi bo'yicha topadi."""
     return ELEMENTS.get(symbol)
 
 
 @lru_cache(maxsize=512)
 def resolve_case(token: str) -> str | None:
-    """Find the correctly cased symbol for a miscased token (``fe`` → ``Fe``)."""
+    """Harflari noto'g'ri yozilgan belgini to'g'rilaydi (``fe`` → ``Fe``)."""
     lowered = token.lower()
     for symbol in ELEMENTS:
         if symbol.lower() == lowered:
@@ -338,7 +338,7 @@ def resolve_case(token: str) -> str | None:
 
 
 def search(term: str) -> list[Element]:
-    """Find elements by symbol, name or atomic number."""
+    """Elementlarni belgisi, nomi yoki tartib raqami bo'yicha qidiradi."""
     term = term.strip().lower()
     if not term:
         return sorted(ELEMENTS.values(), key=lambda e: e.number)

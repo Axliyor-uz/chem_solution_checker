@@ -1,7 +1,7 @@
-"""Judging what a student wrote, and saying why.
+"""O'quvchi yozganini baholaydi va sababini aytadi.
 
-The validator never answers "invalid". Every finding is an :class:`Issue`
-that names the thing that is wrong, where it is, and what to do about it.
+Tekshirgich hech qachon shunchaki "noto'g'ri" demaydi. Har bir xulosa —
+nima xato, u qayerda va nima qilish kerakligini aytadigan :class:`Issue`.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ _ACID_PATTERN: Final[re.Pattern[str]] = re.compile(r"^H\d*[A-Z]")
 
 @dataclass(frozen=True, slots=True)
 class Issue:
-    """One finding about the student's work."""
+    """O'quvchi ishi haqidagi bitta xulosa."""
 
     level: Level
     code: str
@@ -45,7 +45,7 @@ class Issue:
 
 @dataclass(slots=True)
 class ValidationReport:
-    """Everything the checker concluded about one submission."""
+    """Tekshirgichning bitta javob bo'yicha barcha xulosalari."""
 
     source: str
     equation: Equation | None = None
@@ -67,7 +67,7 @@ class ValidationReport:
 
     @property
     def ok(self) -> bool:
-        """True when the equation parses, balances and conserves charge."""
+        """Tenglama o'qilsa, muvozanatlansa va zaryad saqlansa True."""
         return self.parsed and not self.errors
 
     @property
@@ -77,19 +77,19 @@ class ValidationReport:
     @property
     def headline(self) -> str:
         if not self.parsed:
-            return "Could not read the equation"
+            return "Tenglamani o'qib bo'lmadi"
         if self.errors:
             return self.errors[0].title
         if self.warnings:
-            return "Balanced, with notes"
-        return "Balanced and correct"
+            return "Muvozanatlangan, izohlar bilan"
+        return "Muvozanatlangan va to'g'ri"
 
 
 class FormulaValidator:
-    """Checks a single formula in isolation."""
+    """Bitta formulani alohida tekshiradi."""
 
     def validate(self, text: str) -> tuple[Formula | None, list[Issue]]:
-        """Parse one formula and report anything questionable about it."""
+        """Formulani o'qiydi va undagi shubhali joylarni bildiradi."""
         issues: list[Issue] = []
         try:
             formula = parser.parse_formula(text)
@@ -98,9 +98,9 @@ class FormulaValidator:
                 Issue(
                     level="error",
                     code="parse",
-                    title="This formula cannot be read",
+                    title="Bu formulani o'qib bo'lmadi",
                     detail=error.message,
-                    fix=f"Try: {error.suggestion}" if error.suggestion else None,
+                    fix=f"Shunday yozib ko'ring: {error.suggestion}" if error.suggestion else None,
                 )
             )
             return None, issues
@@ -110,8 +110,8 @@ class FormulaValidator:
                 Issue(
                     level="info",
                     code="charge",
-                    title=f"Read as an ion with charge {formula.charge:+d}",
-                    detail=f"Interpreted as {formula.display}.",
+                    title=f"Zaryadi {formula.charge:+d} bo'lgan ion sifatida o'qildi",
+                    detail=f"{formula.display} deb tushunildi.",
                 )
             )
         for symbol, count in formula.composition.items():
@@ -120,8 +120,8 @@ class FormulaValidator:
                     Issue(
                         level="warning",
                         code="large-subscript",
-                        title=f"{symbol} has an unusually large subscript ({count})",
-                        detail="Check the subscript — this is far outside normal formulas.",
+                        title=f"{symbol} ning pastki indeksi g'ayrioddiy katta ({count})",
+                        detail="Indeksni tekshiring — bu odatdagi formulalardan ancha chetda.",
                     )
                 )
         if not issues:
@@ -129,27 +129,27 @@ class FormulaValidator:
                 Issue(
                     level="success",
                     code="formula-ok",
-                    title=f"{formula.display} is a valid formula",
-                    detail=f"Molar mass {format_number(formula.molar_mass, 3)} g/mol.",
+                    title=f"{formula.display} — to'g'ri formula",
+                    detail=f"Molyar massasi {format_number(formula.molar_mass, 3)} g/mol.",
                 )
             )
         return formula, issues
 
 
 class EquationValidator:
-    """Runs the full check on a typed equation."""
+    """Yozilgan tenglamani to'liq tekshiradi."""
 
     def __init__(self) -> None:
         self._formula_validator = FormulaValidator()
 
     def validate(self, text: str) -> ValidationReport:
-        """Parse, balance and critique one equation.
+        """Tenglamani o'qiydi, muvozanatlaydi va tahlil qiladi.
 
         Args:
-            text: Raw input, in any notation the parser accepts.
+            text: Xom kiritma — parser qabul qiladigan istalgan yozuvda.
 
         Returns:
-            A :class:`ValidationReport`. It always has at least one issue.
+            :class:`ValidationReport`. Unda doim kamida bitta xulosa bo'ladi.
         """
         report = ValidationReport(source=text)
         try:
@@ -159,9 +159,9 @@ class EquationValidator:
                 Issue(
                     level="error",
                     code="parse",
-                    title="Could not read the equation",
+                    title="Tenglamani o'qib bo'lmadi",
                     detail=error.message,
-                    fix=f"Try: {error.suggestion}" if error.suggestion else None,
+                    fix=f"Shunday yozib ko'ring: {error.suggestion}" if error.suggestion else None,
                 )
             )
             return report
@@ -177,13 +177,13 @@ class EquationValidator:
         report.issues.extend(self._mass_issue(equation))
         return report
 
-    # ------------------------------------------------------------- sub-checks
+    # ------------------------------------------------------- qismiy tekshiruvlar
 
     def _structure_issues(self, text: str, equation: Equation) -> list[Issue]:
         issues: list[Issue] = []
         normalized = normalize_input(text)
 
-        for side_name, side in (("left", equation.reactants), ("right", equation.products)):
+        for side_name, side in (("chapda", equation.reactants), ("o'ngda", equation.products)):
             seen: dict[str, int] = {}
             for item in side:
                 seen[item.formula.raw] = seen.get(item.formula.raw, 0) + 1
@@ -193,8 +193,8 @@ class EquationValidator:
                         Issue(
                             level="info",
                             code="repeated-species",
-                            title=f"{raw} appears {count} times on the {side_name}",
-                            detail="Like terms can be combined into one coefficient.",
+                            title=f"{raw} {side_name} {count} marta uchraydi",
+                            detail="O'xshash hadlarni bitta koeffitsiyentga birlashtirish mumkin.",
                         )
                     )
 
@@ -205,9 +205,9 @@ class EquationValidator:
                         Issue(
                             level="warning",
                             code="missing-plus",
-                            title="Two formulas look joined by a space",
-                            detail=f"'{piece.strip()}' was read as one species.",
-                            fix="Separate reactants and products with '+'.",
+                            title="Ikkita formula bo'sh joy bilan qo'shilib ketganga o'xshaydi",
+                            detail=f"'{piece.strip()}' bitta modda deb o'qildi.",
+                            fix="Reagent va mahsulotlarni '+' bilan ajrating.",
                         )
                     )
 
@@ -218,9 +218,9 @@ class EquationValidator:
                 Issue(
                     level="warning",
                     code="state-mismatch",
-                    title="Physical states are only given for some species",
-                    detail=f"No state on: {', '.join(missing)}.",
-                    fix="Either label every species with (s), (l), (g) or (aq), or label none.",
+                    title="Fizik holat faqat ayrim moddalarda ko'rsatilgan",
+                    detail=f"Holati yo'q: {', '.join(missing)}.",
+                    fix="Yo har bir moddaga (s), (l), (g) yoki (aq) qo'ying, yo hech biriga qo'ymang.",
                 )
             )
 
@@ -230,9 +230,9 @@ class EquationValidator:
                 Issue(
                     level="info",
                     code="spectator",
-                    title=f"Unchanged on both sides: {', '.join(spectators)}",
-                    detail="Species that appear identically on both sides take no part.",
-                    fix="Cancel them to get the net ionic equation.",
+                    title=f"Ikkala tomonda o'zgarmagan: {', '.join(spectators)}",
+                    detail="Ikkala tomonda bir xil turgan moddalar reaksiyada qatnashmaydi.",
+                    fix="Ularni qisqartirsangiz, qisqa ionli tenglama chiqadi.",
                 )
             )
         return issues
@@ -245,15 +245,16 @@ class EquationValidator:
         if result.status == "missing_species":
             orphans = orphan_elements(equation)
             for symbol, side in sorted(orphans.items()):
-                other = "products" if side == "left" else "reactants"
+                other = "mahsulotlar" if side == "left" else "reagentlar"
+                where = "chapda" if side == "left" else "o'ngda"
                 issues.append(
                     Issue(
                         level="error",
                         code="orphan-element",
-                        title=f"{symbol} appears only on the {side}",
-                        detail=f"Atoms cannot vanish, so a species containing {symbol} "
-                        f"is missing from the {other}.",
-                        fix=f"Add the missing {other[:-1]} that carries the {symbol}.",
+                        title=f"{symbol} faqat {where} uchraydi",
+                        detail=f"Atomlar yo'qolib qolmaydi, demak {other} orasida tarkibida "
+                        f"{symbol} bo'lgan modda tushib qolgan.",
+                        fix=f"{symbol} ni olib yuruvchi tushib qolgan moddani {other}ga qo'shing.",
                     )
                 )
             return issues
@@ -263,9 +264,9 @@ class EquationValidator:
                 Issue(
                     level="error",
                     code="impossible",
-                    title="This reaction cannot be balanced as written",
+                    title="Bu reaksiyani yozilganidek muvozanatlab bo'lmaydi",
                     detail=result.message,
-                    fix="Check each formula against the compound you meant.",
+                    fix="Har bir formulani nazarda tutgan birikmangiz bilan solishtiring.",
                 )
             )
             return issues
@@ -276,7 +277,7 @@ class EquationValidator:
                 Issue(
                     level="success",
                     code="balanced",
-                    title="Every element balances",
+                    title="Har bir element muvozanatda",
                     detail="; ".join(f"{row.element}: {row.left} = {row.right}" for row in rows),
                 )
             )
@@ -286,9 +287,9 @@ class EquationValidator:
                     Issue(
                         level="warning",
                         code="not-lowest-terms",
-                        title="Coefficients are not in lowest terms",
-                        detail=f"Every coefficient can be divided by {factor}.",
-                        fix=f"Write it as {result.equation.display}."
+                        title="Koeffitsiyentlar eng kichik holatda emas",
+                        detail=f"Har bir koeffitsiyentni {factor} ga bo'lish mumkin.",
+                        fix=f"Uni {result.equation.display} ko'rinishida yozing."
                         if result.equation
                         else None,
                     )
@@ -296,13 +297,13 @@ class EquationValidator:
         else:
             wrong = [row for row in rows if not row.balanced]
             detail = "; ".join(
-                f"{row.element}: {row.left} on the left, {row.right} on the right" for row in wrong
+                f"{row.element}: chapda {row.left}, o'ngda {row.right}" for row in wrong
             )
             issues.append(
                 Issue(
                     level="error",
                     code="unbalanced",
-                    title=f"{self._name_elements(wrong)} not balanced",
+                    title=f"{self._name_elements(wrong)} muvozanatlanmagan",
                     detail=detail,
                     fix=self._coefficient_fix(equation, result),
                 )
@@ -313,9 +314,9 @@ class EquationValidator:
                 Issue(
                     level="warning",
                     code="underdetermined",
-                    title="More than one balancing is possible",
+                    title="Bir nechta muvozanatlash varianti mavjud",
                     detail=result.message,
-                    fix="Write each reaction separately to get a unique answer.",
+                    fix="Yagona javob olish uchun har bir reaksiyani alohida yozing.",
                 )
             )
         return issues
@@ -330,16 +331,16 @@ class EquationValidator:
                 Issue(
                     level="success",
                     code="charge-ok",
-                    title=f"Charge balances at {left:+d} on both sides",
+                    title=f"Zaryad muvozanatda: ikkala tomonda ham {left:+d}",
                 )
             ]
         return [
             Issue(
                 level="error",
                 code="charge-mismatch",
-                title="Charge is not conserved",
-                detail=f"Net {left:+d} on the left but {right:+d} on the right.",
-                fix="Add electrons, H⁺ or OH⁻ as the medium requires, then rebalance.",
+                title="Zaryad saqlanmagan",
+                detail=f"Chapda umumiy {left:+d}, o'ngda esa {right:+d}.",
+                fix="Muhitga qarab elektron, H⁺ yoki OH⁻ qo'shing va qaytadan muvozanatlang.",
             )
         ]
 
@@ -351,32 +352,32 @@ class EquationValidator:
                 Issue(
                     level="info",
                     code="mass-ok",
-                    title=f"Mass conserved: {format_number(left, 3)} g/mol on each side",
+                    title=f"Massa saqlangan: har ikki tomonda {format_number(left, 3)} g/mol",
                 )
             ]
         return [
             Issue(
                 level="info",
                 code="mass-gap",
-                title="Mass does not yet match",
-                detail=f"{format_number(left, 3)} g/mol in, {format_number(right, 3)} g/mol out — "
-                f"a gap of {format_number(abs(left - right), 3)} g/mol.",
-                fix="Mass falls into place once the atoms do.",
+                title="Massa hali mos kelmayapti",
+                detail=f"Kirishda {format_number(left, 3)} g/mol, chiqishda {format_number(right, 3)} g/mol — "
+                f"farqi {format_number(abs(left - right), 3)} g/mol.",
+                fix="Atomlar joyiga tushishi bilan massa ham to'g'ri chiqadi.",
             )
         ]
 
-    # ---------------------------------------------------------------- helpers
+    # ------------------------------------------------------------ yordamchilar
 
     @staticmethod
     def _name_elements(rows: list[AtomRow]) -> str:
         names = [row.element for row in rows]
         if len(names) == 1:
-            return f"{names[0]} is"
-        return f"{', '.join(names[:-1])} and {names[-1]} are"
+            return names[0]
+        return f"{', '.join(names[:-1])} va {names[-1]}"
 
     @staticmethod
     def _coefficient_fix(equation: Equation, result: BalanceResult) -> str | None:
-        """Say which coefficient to change, not just that something is wrong."""
+        """Qaysi koeffitsiyentni o'zgartirish kerakligini aytadi, shunchaki "xato" demaydi."""
         if not result.succeeded or not result.equation:
             return None
         changes = [
@@ -390,9 +391,9 @@ class EquationValidator:
             return None
         if len(changes) == 1:
             display, _, after = changes[0]
-            return f"The coefficient in front of {display} should become {after}."
+            return f"{display} oldidagi koeffitsiyent {after} bo'lishi kerak."
         listed = ", ".join(f"{display} → {after}" for display, _, after in changes)
-        return f"Adjust these coefficients: {listed}."
+        return f"Bu koeffitsiyentlarni to'g'rilang: {listed}."
 
     @staticmethod
     def _spectators(equation: Equation) -> list[str]:
@@ -405,6 +406,6 @@ class EquationValidator:
         return [parser.parse_formula(raw).display for raw, _ in sorted(shared)]
 
 
-#: Shared validator instances.
+#: Umumiy tekshirgich namunalari.
 formula_validator: Final[FormulaValidator] = FormulaValidator()
 equation_validator: Final[EquationValidator] = EquationValidator()

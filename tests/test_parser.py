@@ -1,4 +1,4 @@
-"""Tests for formula and equation parsing."""
+"""Formula va tenglamalarni o'qish uchun testlar."""
 
 from __future__ import annotations
 

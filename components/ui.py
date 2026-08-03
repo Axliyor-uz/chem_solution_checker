@@ -1,9 +1,9 @@
-"""The look of the application, in one place.
+"""Dasturning ko'rinishi — bitta joyda.
 
-The palette is taken from flame tests — sodium amber, copper green, strontium
-red, potassium lilac — on an ink-dark ground, so the colours in the interface
-mean something in the subject it serves. Green reads as balanced, red as an
-imbalance, amber as a caution.
+Rang tanlovi olov sinovidan olingan — natriy sarig'i, mis yashili, stronsiy
+qizili, kaliy siyohrangi — quyuq siyoh fonida, shuning uchun interfeys ranglari
+o'zi xizmat qilayotgan fanda ma'no kasb etadi. Yashil — muvozanat, qizil —
+muvozanatsizlik, sariq — ogohlantirish.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ THEME_CSS = """
 section[data-testid="stSidebar"] { background: #090D13; border-right: 1px solid var(--line); }
 h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: var(--paper); }
 
-/* Masthead ------------------------------------------------------------- */
+/* Sarlavha ------------------------------------------------------------- */
 .masthead { border-bottom: 1px solid var(--line); padding: 0.2rem 0 1.1rem; margin-bottom: 1.4rem; }
 .masthead .eyebrow {
   font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.18em;
@@ -50,7 +50,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
 .masthead h1 { font-size: 2rem; margin: 0 0 0.3rem; line-height: 1.1; }
 .masthead p { color: var(--muted); margin: 0; font-size: 0.94rem; max-width: 60ch; }
 
-/* Equation display ----------------------------------------------------- */
+/* Tenglama ko'rsatkichi ------------------------------------------------ */
 .equation-card {
   background: var(--slab); border: 1px solid var(--line); border-left: 3px solid var(--copper);
   border-radius: 4px; padding: 1.1rem 1.25rem; margin: 0.5rem 0 1rem;
@@ -67,7 +67,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
 .equation-card.is-muted { border-left-color: var(--line); }
 .equation-card.is-muted .formula { color: var(--muted); font-size: 1.15rem; }
 
-/* Balance ledger — the signature element -------------------------------- */
+/* Muvozanat tarozisi — asosiy element ----------------------------------- */
 .ledger { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin: 0.4rem 0 0.9rem; }
 .ledger-head {
   display: grid; grid-template-columns: 3.2rem 1fr 3.6rem 1fr 3.2rem;
@@ -100,7 +100,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
 .fulcrum.off { color: var(--strontium); font-weight: 600; }
 .fulcrum.ok { color: var(--copper); }
 
-/* Findings -------------------------------------------------------------- */
+/* Xulosalar ------------------------------------------------------------- */
 .finding {
   display: grid; grid-template-columns: 1.6rem 1fr; gap: 0.55rem;
   border: 1px solid var(--line); border-radius: 4px; padding: 0.75rem 0.9rem;
@@ -125,7 +125,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
 .finding.info { border-left: 3px solid var(--potassium); }
 .finding.info .mark { color: var(--potassium); }
 
-/* Steps ------------------------------------------------------------------ */
+/* Qadamlar ---------------------------------------------------------------- */
 .step { border-left: 1px solid var(--line); padding: 0 0 1.3rem 1.3rem; margin-left: 0.85rem; position: relative; }
 .step:last-child { padding-bottom: 0.3rem; }
 .step .no {
@@ -142,7 +142,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
   color: var(--paper); line-height: 1.75; white-space: pre-wrap;
 }
 
-/* Stats ------------------------------------------------------------------ */
+/* Ko'rsatkichlar ---------------------------------------------------------- */
 .stat-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.3rem 0 1rem; }
 .stat {
   flex: 1 1 8.5rem; background: var(--slab); border: 1px solid var(--line);
@@ -154,7 +154,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
 }
 .stat .v { font-family: var(--mono); font-size: 1.15rem; font-weight: 600; margin-top: 0.2rem; }
 
-/* Periodic table ---------------------------------------------------------- */
+/* Davriy jadval ----------------------------------------------------------- */
 .ptable { display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 2px; }
 .ptable .cell {
   aspect-ratio: 1; border-radius: 2px; padding: 2px; display: flex;
@@ -169,7 +169,7 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.01em; color: va
 .legend span { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 0.3rem; }
 .legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 
-/* Streamlit widget tuning -------------------------------------------------- */
+/* Streamlit vidjetlarini moslash ------------------------------------------- */
 .stTextArea textarea, .stTextInput input {
   font-family: var(--mono) !important; background: var(--slab) !important;
   color: var(--paper) !important; border: 1px solid var(--line) !important;
@@ -189,9 +189,10 @@ div.stButton > button[kind="primary"] {
   background: var(--copper); color: #06231C; border-color: var(--copper); font-weight: 600;
 }
 div.stButton > button[kind="primary"]:hover { background: #45D8B8; color: #06231C; }
-/* Key grids — keyboard and examples ---------------------------------------
-   Streamlit stacks columns one-per-row below 640px, which turns forty element
-   keys into forty full-width bars. These grids stay horizontal at any width. */
+/* Tugmalar to'ri — klaviatura va misollar ----------------------------------
+   Streamlit 640px dan tor ekranda ustunlarni bitta qatorga bittadan tizadi, bu
+   esa qirq element tugmasini qirqta yaxlit qatorga aylantiradi. Bu to'rlar
+   har qanday kenglikda gorizontal qoladi. */
 .st-key-example-grid [data-testid="stHorizontalBlock"],
 [class*="st-key-keygrid"] [data-testid="stHorizontalBlock"] {
   flex-wrap: nowrap !important; gap: 0.25rem !important;
@@ -223,26 +224,26 @@ hr { border-color: var(--line); }
 """
 
 CATEGORY_COLORS: dict[str, str] = {
-    "alkali metal": "#F0A028",
-    "alkaline earth metal": "#D98A3A",
-    "transition metal": "#37C4A6",
-    "post-transition metal": "#2E9C89",
+    "ishqoriy metall": "#F0A028",
+    "ishqoriy-yer metall": "#D98A3A",
+    "o'tish metali": "#37C4A6",
+    "o'tishdan keyingi metall": "#2E9C89",
     "metalloid": "#9A86F0",
-    "nonmetal": "#5A8FD8",
-    "halogen": "#7BB3E8",
-    "noble gas": "#B07BD8",
-    "lanthanide": "#E7515F",
-    "actinide": "#C4444F",
+    "metallmas": "#5A8FD8",
+    "galogen": "#7BB3E8",
+    "inert gaz": "#B07BD8",
+    "lantanoid": "#E7515F",
+    "aktinoid": "#C4444F",
 }
 
 
 def inject_theme() -> None:
-    """Apply the stylesheet once per page render."""
+    """Har bir sahifa chizilganda uslublar jadvalini qo'llaydi."""
     st.markdown(THEME_CSS, unsafe_allow_html=True)
 
 
 def page_header(title: str, subtitle: str, eyebrow: str = "") -> None:
-    """Render the page masthead."""
+    """Sahifa sarlavhasini chizadi."""
     st.markdown(
         f"""<div class="masthead">
         {f'<div class="eyebrow">{html.escape(eyebrow)}</div>' if eyebrow else ''}
@@ -252,8 +253,8 @@ def page_header(title: str, subtitle: str, eyebrow: str = "") -> None:
     )
 
 
-def equation_card(text: str, label: str = "Equation", variant: str = "") -> None:
-    """Show a formula or equation in the monospace display card."""
+def equation_card(text: str, label: str = "Tenglama", variant: str = "") -> None:
+    """Formula yoki tenglamani monoshrift kartochkasida ko'rsatadi."""
     css_class = f"equation-card {variant}".strip()
     st.markdown(
         f"""<div class="{css_class}">
@@ -264,19 +265,19 @@ def equation_card(text: str, label: str = "Equation", variant: str = "") -> None
 
 
 def balance_ledger(rows: Sequence[AtomRow], charges: tuple[int, int] | None = None) -> None:
-    """The signature view: each element weighed against itself across a fulcrum.
+    """Asosiy ko'rinish: har bir element tayanch nuqtasi atrofida o'zi bilan taroziga qo'yiladi.
 
-    Bars grow outward from the centre, so an imbalance is visible as an
-    uneven pair before any number is read.
+    Ustunlar markazdan tashqariga qarab o'sadi, shuning uchun muvozanatsizlik
+    birorta raqamni o'qishdan oldin notekis juftlik sifatida ko'rinadi.
     """
     if not rows:
-        st.caption("No atoms to weigh yet.")
+        st.caption("Hozircha tortiladigan atom yo'q.")
         return
     peak = max(max(row.left, row.right) for row in rows) or 1
     body = [
         '<div class="ledger"><div class="ledger-head">'
-        "<span>Element</span><span>Reactants</span><span>Balance</span>"
-        "<span>Products</span><span>Δ</span></div>"
+        "<span>Element</span><span>Reagentlar</span><span>Muvozanat</span>"
+        "<span>Mahsulotlar</span><span>Δ</span></div>"
     ]
     for row in rows:
         left_pct = row.left / peak * 100
@@ -315,10 +316,10 @@ def balance_ledger(rows: Sequence[AtomRow], charges: tuple[int, int] | None = No
 
 
 def findings(issues: Iterable[Issue]) -> None:
-    """Render validator issues as a stack of cards."""
+    """Tekshirgich xulosalarini kartochkalar ko'rinishida chizadi."""
     for issue in issues:
         detail = f'<div class="detail">{html.escape(issue.detail)}</div>' if issue.detail else ""
-        fix = f'<div class="fix"><b>Fix</b> — {html.escape(issue.fix)}</div>' if issue.fix else ""
+        fix = f'<div class="fix"><b>Yechim</b> — {html.escape(issue.fix)}</div>' if issue.fix else ""
         st.markdown(
             f'<div class="finding {issue.level}"><div class="mark">{issue.icon}</div>'
             f'<div><div class="title">{html.escape(issue.title)}</div>{detail}{fix}</div></div>',
@@ -327,7 +328,7 @@ def findings(issues: Iterable[Issue]) -> None:
 
 
 def steps_view(steps: Sequence[Step]) -> None:
-    """Render the worked solution."""
+    """Bosqichma-bosqich yechimni chizadi."""
     for step in steps:
         work = ""
         if step.equation:
@@ -346,7 +347,7 @@ def steps_view(steps: Sequence[Step]) -> None:
 
 
 def stats(items: Sequence[tuple[str, str]], accent: str = "var(--paper)") -> None:
-    """A row of labelled values."""
+    """Nomlangan qiymatlar qatori."""
     cards = "".join(
         f'<div class="stat"><div class="k">{html.escape(key)}</div>'
         f'<div class="v" style="color:{accent}">{html.escape(value)}</div></div>'
@@ -356,7 +357,7 @@ def stats(items: Sequence[tuple[str, str]], accent: str = "var(--paper)") -> Non
 
 
 def category_legend() -> None:
-    """Colour key for the periodic table."""
+    """Davriy jadval uchun rang izohi."""
     entries = "".join(
         f'<span><i style="background:{color}"></i>{html.escape(name)}</span>'
         for name, color in CATEGORY_COLORS.items()

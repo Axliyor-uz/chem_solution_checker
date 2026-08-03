@@ -1,162 +1,168 @@
-# Chemistry Solution Checker
+# Kimyo yechimlari tekshirgichi
 
-A Streamlit application that reads a chemical equation the way a student writes
-it, says exactly what is wrong with it, balances it, and shows the working.
+Kimyoviy tenglamani o'quvchi qanday yozsa, shundayligicha o'qiydigan, undagi
+xatoni aniq aytadigan, muvozanatlaydigan va yechim yo'lini ko'rsatadigan
+Streamlit dasturi.
 
-It never answers "invalid equation". Every finding names the element, gives the
-counts on both sides, and says which coefficient has to change.
+U hech qachon shunchaki "tenglama noto'g'ri" demaydi. Har bir xulosa elementni
+nomlaydi, ikkala tomondagi sonlarni keltiradi va qaysi koeffitsiyentni
+o'zgartirish kerakligini aytadi.
 
 ```
 H2 + O2 -> H2O
 
-  ✕  O is not balanced
-     O: 2 on the left, 1 on the right
-     Fix — The coefficient in front of H₂O should become 2.
+  ✕  O muvozanatlanmagan
+     O: chapda 2, o'ngda 1
+     Yechim — H₂O oldidagi koeffitsiyent 2 bo'lishi kerak.
 ```
 
-## Running it
+## Ishga tushirish
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Python 3.12 or later. No API key and no network access are needed; the optional
-AI tutor is the only feature that uses either.
+Python 3.12 yoki undan yangi versiya. API kalit ham, internet ham talab
+qilinmaydi; faqat ixtiyoriy sun'iy intellekt ustozi shularga muhtoj.
 
-## What it does
+## Nima qila oladi
 
-| Page | What it is for |
+| Sahifa | Nima uchun |
 | --- | --- |
-| **Equation checker** | Validation, balancing, atom counts, worked solution, reaction type, export |
-| **Stoichiometry** | Limiting reagent, theoretical yield, excess, gas volumes, percent yield |
-| **Molar mass** | Per-element contributions, percent composition, mass↔mole conversion |
-| **Periodic table** | All 118 elements, clickable, with configurations and oxidation states |
-| **Compound info** | Properties, uses and hazards; unlisted formulas are named from the rules |
-| **History** | Everything checked this session, searchable, with export |
+| **Tenglama tekshirgich** | Tekshirish, muvozanatlash, atomlar hisobi, yechim qadamlari, reaksiya turi, eksport |
+| **Stexiometriya** | Cheklovchi reagent, nazariy unum, ortiqcha modda, gaz hajmi, foizli unum |
+| **Molyar massa** | Elementlar ulushi, foizli tarkib, massa↔mol o'girish |
+| **Davriy jadval** | 118 ta element, bosiladigan kataklar, konfiguratsiya va oksidlanish darajalari |
+| **Birikma haqida** | Xossalar, ishlatilishi va xavflari; ro'yxatda yo'q formulalar qoidalar bo'yicha nomlanadi |
+| **Tarix** | Shu sessiyada tekshirilganlarning hammasi, qidiruv va eksport bilan |
 
-### The chemical keyboard
+### Kimyoviy klaviatura
 
-Elements, digits, subscripts, superscripted charges, brackets, operators, states,
-Greek symbols and catalysts, each writing into the equation box. Typing normally
-works just as well — `H2O` and `H₂O` produce the same result, and both are stored
-as `H2O`.
+Elementlar, raqamlar, pastki indekslar, yuqori indeksdagi zaryadlar, qavslar,
+amallar, holatlar, grek harflari va katalizatorlar — har biri tenglama
+maydoniga yozadi. Oddiy usulda yozish ham xuddi shunday ishlaydi: `H2O` va
+`H₂O` bir xil natija beradi, ikkalasi ham `H2O` bo'lib saqlanadi.
 
-Catalyst keys write to a separate conditions field rather than into the equation,
-because a catalyst belongs above the arrow, not inside a formula.
+Katalizator tugmalari tenglamaga emas, alohida sharoitlar maydoniga yozadi,
+chunki katalizator strelka ustida turadi, formula ichida emas.
 
-### The balance ledger
+### Muvozanat tarozisi
 
-The signature view. Each element is weighed against itself across a central
-fulcrum, with bars growing outward from the middle, so an imbalance is visible
-before a single number is read. Charge gets its own row whenever ions are
-present.
+Dasturning asosiy ko'rinishi. Har bir element markaziy tayanch atrofida o'zi
+bilan taroziga qo'yiladi, ustunlar markazdan tashqariga qarab o'sadi — shuning
+uchun muvozanatsizlik birorta raqamni o'qishdan oldin ko'zga tashlanadi. Ionlar
+bo'lsa, zaryad uchun alohida qator chiqadi.
 
-## How it works
+## Qanday ishlaydi
 
-Balancing is a linear algebra problem, not a search. Each element contributes one
-conservation equation and charge contributes one more; writing reactants positive
-and products negative turns "balanced" into "lies in the null space" of that
-matrix. SymPy solves it over the rationals, denominators are cleared, and the
-result is divided by its highest common factor.
+Muvozanatlash — qidiruv emas, chiziqli algebra masalasi. Har bir element bitta
+saqlanish tenglamasini beradi, zaryad esa yana bittasini; reagentlarni musbat,
+mahsulotlarni manfiy yozish "muvozanatlangan" shartini o'sha matritsaning "nol
+fazosida yotadi" shartiga aylantiradi. SymPy uni ratsional sonlar ustida
+yechadi, maxrajlar yo'qotiladi va natija eng katta umumiy bo'luvchiga bo'linadi.
 
-One code path therefore covers ordinary equations, ionic equations and redox:
+Shu sababli bitta kod yo'li oddiy tenglamalarni ham, ionli va oksidlanish-
+qaytarilish tenglamalarini ham qamrab oladi:
 
 ```
 MnO4- + Fe2+ + H+  →  MnO4⁻ + 5Fe²⁺ + 8H⁺ → Mn²⁺ + 5Fe³⁺ + 4H₂O
 ```
 
-The same matrix distinguishes the four ways an equation can fail, which matters
-because they are different mistakes needing different advice:
+O'sha matritsa tenglama muvaffaqiyatsiz bo'lishining to'rt xil sababini ajratadi
+— bu muhim, chunki ular turli xatolar va turli maslahat talab qiladi:
 
-| Outcome | What it means |
+| Natija | Ma'nosi |
 | --- | --- |
-| `balanced` | Coefficients found |
-| `missing_species` | An element appears on one side only — no coefficient can fix it |
-| `impossible` | The null space is empty, or needs a negative coefficient |
-| `underdetermined` | Two reactions written as one, so the answer is not unique |
+| `balanced` | Koeffitsiyentlar topildi |
+| `missing_species` | Element faqat bir tomonda — buni koeffitsiyent to'g'rilay olmaydi |
+| `impossible` | Nol fazo bo'sh yoki manfiy koeffitsiyent kerak |
+| `underdetermined` | Bitta qatorga yozilgan ikkita reaksiya, javob yagona emas |
 
-## Reading student notation
+## O'quvchi yozuvini o'qish
 
-`n+` written without a caret is genuinely ambiguous: the 2 in `Cu2+` is a charge,
-the 4 in `NH4+` is a subscript. The parser resolves it with rules applied in
-order, and the notation guide in the sidebar tells the student what they are:
+Ustki belgisiz yozilgan `n+` chinakam ikkima'noli: `Cu2+` dagi 2 — zaryad,
+`NH4+` dagi 4 — pastki indeks. Parser buni quyidagi tartibdagi qoidalar bilan
+hal qiladi, yon paneldagi yozuv qo'llanmasi esa o'quvchiga shuni tushuntiradi:
 
-1. `^` marks a charge explicitly and always wins — `SO4^2-`
-2. Sign-first is always a charge — `Fe+3`
-3. `n+` after a lone element symbol is a charge — `Cu2+` → Cu²⁺
-4. Two or more digits split: the last is the charge — `SO42-` → SO₄²⁻
-5. A single digit otherwise stays a subscript — `NH4+` → NH₄⁺
+1. `^` zaryadni aniq belgilaydi va doim ustun turadi — `SO4^2-`
+2. Avval ishora kelsa, bu doim zaryad — `Fe+3`
+3. Yolg'iz element belgisidan keyingi `n+` — zaryad — `Cu2+` → Cu²⁺
+4. Ikki va undan ortiq raqam bo'linadi: oxirgisi zaryad — `SO42-` → SO₄²⁻
+5. Aks holda bitta raqam pastki indeks bo'lib qoladi — `NH4+` → NH₄⁺
 
-Miscapitalisation is repaired rather than rejected. `FE2o3` returns "Element
-capitalization is incorrect — did you mean Fe₂O₃?" Where re-casing is ambiguous
-(`caco3` could be CaCO₃ or CaCo₃) the reading using lighter elements wins, which
-is right far more often than not.
+Katta-kichik harf xatosi rad etilmaydi, tuzatiladi. `FE2o3` uchun dastur
+"element belgilari katta-kichik harfda noto'g'ri yozilgan — `Fe₂O₃` ni nazarda
+tutdingizmi?" deb javob beradi. Qayta o'qish ikkima'noli bo'lsa (`caco3` ni
+CaCO₃ ham, CaCo₃ ham deb o'qish mumkin) yengilroq elementlardan iborat variant
+tanlanadi — bu deyarli har doim to'g'ri chiqadi.
 
-## Project structure
+## Loyiha tuzilishi
 
 ```
 chem_solution_checker/
-├── app.py                      navigation, theme, notation sidebar
+├── app.py                      navigatsiya, mavzu, yozuv qoidalari paneli
 ├── pages/
-│   ├── Equation_Checker.py     the main page
+│   ├── Equation_Checker.py     asosiy sahifa
 │   ├── Stoichiometry.py
 │   ├── Molar_Mass.py
 │   ├── Periodic_Table.py
 │   ├── Compound_Info.py
 │   └── History.py
 ├── components/
-│   ├── parser.py               text → Formula / Species / Equation
-│   ├── validator.py            findings a student can act on
-│   ├── balancer.py             null-space solution of the conservation matrix
-│   ├── atom_counter.py         counting, kept separate from judging
-│   ├── reaction_classifier.py  reaction families, with evidence
-│   ├── explanation.py          steps, tutor notes, progressive hints
-│   ├── stoichiometry.py        moles, limiting reagent, yield
-│   ├── chemical_keyboard.py    the keyboard component
-│   └── ui.py                   theme and shared rendering
+│   ├── parser.py               matn → Formula / Species / Equation
+│   ├── validator.py            o'quvchi amal qila oladigan xulosalar
+│   ├── balancer.py             saqlanish matritsasining nol fazosi orqali yechim
+│   ├── atom_counter.py         sanash, baho berishdan alohida
+│   ├── reaction_classifier.py  reaksiya turkumlari va dalillari
+│   ├── explanation.py          qadamlar, ustoz izohlari, bosqichli maslahatlar
+│   ├── stoichiometry.py        mol, cheklovchi reagent, unum
+│   ├── chemical_keyboard.py    klaviatura komponenti
+│   └── ui.py                   mavzu va umumiy chizish
 ├── data/
-│   ├── elements.py             118 elements; positions and configurations computed
-│   └── compounds.py            reference data, polyatomic ions, naming rules
+│   ├── elements.py             118 ta element; o'rni va konfiguratsiyasi hisoblanadi
+│   └── compounds.py            ma'lumotnoma, murakkab ionlar, nomlash qoidalari
 ├── utils/
-│   ├── formatting.py           ASCII ↔ typeset conversion
-│   ├── history.py              session record
+│   ├── formatting.py           ASCII ↔ terilgan ko'rinish
+│   ├── history.py              sessiya yozuvi
 │   └── export.py               PDF, CSV, JSON, PNG
-└── tests/                      137 tests
+└── tests/                      137 ta test
 ```
 
-Chemistry logic, UI and business logic stay separate: nothing under `components/`
-except `ui.py` and `chemical_keyboard.py` imports Streamlit, so the whole
-chemistry engine can be tested and reused headlessly.
+Kimyo mantig'i, interfeys va biznes mantiq alohida turadi: `components/` ichida
+`ui.py` va `chemical_keyboard.py` dan boshqa hech bir fayl Streamlit'ni import
+qilmaydi, shuning uchun butun kimyo dvigatelini interfeyssiz sinash va qayta
+ishlatish mumkin.
 
-## Tests
+## Testlar
 
 ```bash
 pytest
 ```
 
-137 tests covering parsing (including every charge and arrow spelling), balancing
-against known answers, atom counting, validation messages, classification,
-explanation, naming and all four export formats.
+137 ta test: o'qish (barcha zaryad va strelka yozuvlari bilan), ma'lum javoblar
+bo'yicha muvozanatlash, atomlarni sanash, tekshirish xabarlari, tasniflash,
+tushuntirish, nomlash va to'rtala eksport formati.
 
-## Optional AI tutor
+## Ixtiyoriy sun'iy intellekt ustozi
 
-The worked solutions, hints and tutor notes are all generated offline. If an
-`ANTHROPIC_API_KEY` is present in `.streamlit/secrets.toml` or the environment, a
-free-text tutor is added on top, and it is given the verified analysis as context
-so it cannot contradict the symbolic result. In practice mode it is instructed to
-withhold the answer.
+Yechim qadamlari, maslahatlar va ustoz izohlari to'liq oflayn tayyorlanadi.
+Agar `.streamlit/secrets.toml` faylida yoki muhit o'zgaruvchilarida
+`ANTHROPIC_API_KEY` bo'lsa, ustiga erkin savol-javob ustozi qo'shiladi; unga
+kontekst sifatida tekshirilgan tahlil beriladi, shuning uchun u ramziy natijaga
+zid gapira olmaydi. Mashq rejimida esa unga javobni aytmaslik topshiriladi.
 
-## Known limits
+## Ma'lum cheklovlar
 
-- **Feasibility is not chemistry.** A balanced equation is not necessarily a
-  reaction that runs. The checker verifies conservation, not thermodynamics, and
-  says so rather than implying otherwise.
-- **Classification is heuristic.** Reaction families are matched on structural
-  evidence, and each label carries the observation behind it and a confidence, so
-  a student can judge it rather than trust it.
-- **Redox detection** looks for elements moving between free and combined states
-  or changing charge. It does not compute oxidation numbers inside covalent
-  compounds, so subtle redox reactions may go unlabelled.
-- **Reference data** covers 40 compounds in depth; everything else gets a
-  computed molar mass and a rule-based name.
+- **Muvozanat — hali kimyo emas.** Muvozanatlangan tenglama, albatta, amalda
+  boradigan reaksiya degani emas. Tekshirgich saqlanish qonunlarini tekshiradi,
+  termodinamikani emas, va buni yashirmay aytadi.
+- **Tasniflash — evristik.** Reaksiya turkumlari tuzilish belgilariga qarab
+  aniqlanadi; har bir yorliq o'zi asoslangan kuzatuv va ishonch darajasi bilan
+  beriladi, shunda o'quvchi ko'r-ko'rona ishonmay, o'zi baho bera oladi.
+- **Oksidlanish-qaytarilishni aniqlash** elementning erkin va birikkan holat
+  orasida ko'chishini yoki zaryad o'zgarishini qidiradi. Kovalent birikmalar
+  ichidagi oksidlanish darajalarini hisoblamaydi, shuning uchun ayrim nozik
+  redoks reaksiyalari belgilanmay qolishi mumkin.
+- **Ma'lumotnoma** 40 ta birikmani batafsil qamraydi; qolgan hamma narsa uchun
+  molyar massa hisoblanadi va nom qoidalar asosida tuziladi.

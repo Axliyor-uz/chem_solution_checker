@@ -1,4 +1,4 @@
-"""Tests for balancing, atom counting and mole arithmetic."""
+"""Muvozanatlash, atom sanash va mol hisoblari uchun testlar."""
 
 from __future__ import annotations
 
@@ -88,8 +88,8 @@ class TestAtomCounter:
     def test_difference_and_verdict(self) -> None:
         row = next(r for r in build_table(parser.parse_equation("H2 + O2 -> H2O")) if r.element == "O")
         assert row.difference == -1
-        assert row.verdict == "incorrect"
-        assert "left" in row.short_note
+        assert row.verdict == "noto'g'ri"
+        assert "chapda" in row.short_note
 
     def test_mass_conservation_follows_atom_balance(self) -> None:
         left, right = mass_balance(parser.parse_equation("2H2 + O2 -> 2H2O"))

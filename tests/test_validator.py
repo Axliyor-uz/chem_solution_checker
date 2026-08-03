@@ -1,4 +1,4 @@
-"""Tests for validation, classification, explanation and export."""
+"""Tekshirish, tasniflash, tushuntirish va eksport uchun testlar."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ class TestEquationValidation:
     def test_balanced_equation_passes(self) -> None:
         report = check("2H2 + O2 -> 2H2O")
         assert report.ok
-        assert report.headline == "Balanced and correct"
+        assert report.headline == "Muvozanatlangan va to'g'ri"
         assert "balanced" in codes(report)
 
     def test_unbalanced_equation_names_the_element(self) -> None:
@@ -35,7 +35,7 @@ class TestEquationValidation:
         assert not report.ok
         issue = next(i for i in report.issues if i.code == "unbalanced")
         assert "O" in issue.title
-        assert "2 on the left" in issue.detail
+        assert "chapda 2" in issue.detail
 
     def test_fix_names_the_coefficient_to_change(self) -> None:
         report = check("H2 + O2 -> H2O")
@@ -46,12 +46,12 @@ class TestEquationValidation:
     def test_single_coefficient_fix_is_phrased_directly(self) -> None:
         report = check("2H2 + O2 -> H2O")
         issue = next(i for i in report.issues if i.code == "unbalanced")
-        assert issue.fix == "The coefficient in front of H₂O should become 2."
+        assert issue.fix == "H₂O oldidagi koeffitsiyent 2 bo'lishi kerak."
 
     def test_lowest_terms_warning(self) -> None:
         report = check("4H2 + 2O2 -> 4H2O")
         assert "not-lowest-terms" in codes(report)
-        assert report.headline == "Balanced, with notes"
+        assert report.headline == "Muvozanatlangan, izohlar bilan"
 
     def test_charge_mismatch_is_an_error(self) -> None:
         report = check("Zn + Cu2+ -> Zn2+ + Cu2+")
@@ -104,12 +104,12 @@ class TestClassification:
     @pytest.mark.parametrize(
         ("text", "expected"),
         [
-            ("CH4 + 2O2 -> CO2 + 2H2O", "Combustion"),
-            ("CaCO3 -> CaO + CO2", "Decomposition"),
-            ("2Na + Cl2 -> 2NaCl", "Synthesis"),
-            ("NaOH + HCl -> NaCl + H2O", "Neutralisation (acid–base)"),
-            ("Fe + CuSO4 -> FeSO4 + Cu", "Single displacement"),
-            ("NaCl(aq) + AgNO3(aq) -> AgCl(s) + NaNO3(aq)", "Precipitation"),
+            ("CH4 + 2O2 -> CO2 + 2H2O", "Yonish"),
+            ("CaCO3 -> CaO + CO2", "Parchalanish"),
+            ("2Na + Cl2 -> 2NaCl", "Birikish"),
+            ("NaOH + HCl -> NaCl + H2O", "Neytrallanish (kislota–asos)"),
+            ("Fe + CuSO4 -> FeSO4 + Cu", "O'rin almashinish"),
+            ("NaCl(aq) + AgNO3(aq) -> AgCl(s) + NaNO3(aq)", "Cho'kma hosil bo'lishi"),
         ],
     )
     def test_primary_type(self, text: str, expected: str) -> None:
@@ -117,14 +117,14 @@ class TestClassification:
 
     def test_redox_detected_alongside(self) -> None:
         names = [item.name for item in classify(parser.parse_equation("Zn + 2HCl -> ZnCl2 + H2"))]
-        assert "Redox" in names
+        assert "Oksidlanish-qaytarilish" in names
 
     def test_equilibrium_from_the_arrow(self) -> None:
         names = [item.name for item in classify(parser.parse_equation("2SO2 + O2 <=> 2SO3"))]
-        assert "Equilibrium" in names
+        assert "Muvozanat" in names
 
     def test_summary_sentence(self) -> None:
-        assert summarise(parser.parse_equation("CH4 + 2O2 -> CO2 + 2H2O")).startswith("Combustion")
+        assert summarise(parser.parse_equation("CH4 + 2O2 -> CO2 + 2H2O")).startswith("Yonish")
 
 
 class TestExplanation:
@@ -138,7 +138,7 @@ class TestExplanation:
     def test_conservation_lines_use_unknowns(self) -> None:
         equation = parser.parse_equation("H2 + O2 -> H2O")
         steps = build_steps(equation, balancer.balance(equation))
-        setup = next(step for step in steps if "conservation" in step.title)
+        setup = next(step for step in steps if "saqlanish" in step.title)
         assert any(line.startswith("H:") for line in setup.lines)
 
     def test_hints_reveal_gradually(self) -> None:
@@ -151,31 +151,31 @@ class TestExplanation:
     def test_error_report_is_plain_language(self) -> None:
         equation = parser.parse_equation("H2 + O2 -> H2O")
         lines = error_report(equation, balancer.balance(equation))
-        assert any("Oxygen" in line or line.startswith("O atoms") for line in lines)
-        assert any("should become 2" in line for line in lines)
+        assert any(line.startswith("O atomlari") for line in lines)
+        assert any("koeffitsiyent 2 bo'lishi kerak" in line for line in lines)
 
     def test_tutor_notes_adapt_to_the_reaction(self) -> None:
         equation = parser.parse_equation("CH4 + O2 -> CO2 + H2O")
         headings = [heading for heading, _ in tutor_notes(equation, balancer.balance(equation))]
-        assert any("combustion" in heading.lower() for heading in headings)
+        assert any("yonish" in heading.lower() for heading in headings)
 
     def test_polyatomic_units_are_pointed_out(self) -> None:
         equation = parser.parse_equation("NaOH + H2SO4 -> Na2SO4 + H2O")
         headings = [heading for heading, _ in tutor_notes(equation, balancer.balance(equation))]
-        assert any("one unit" in heading for heading in headings)
+        assert any("bitta birlik" in heading for heading in headings)
 
 
 class TestNaming:
     @pytest.mark.parametrize(
         ("formula", "name"),
         [
-            ("FeCl3", "Iron(III) chloride"),
-            ("FeCl2", "Iron(II) chloride"),
-            ("Cu2O", "Copper(I) oxide"),
-            ("MgCl2", "Magnesium chloride"),
-            ("N2O4", "Dinitrogen tetroxide"),
-            ("KNO3", "Potassium nitrate"),
-            ("H2O", "Water"),
+            ("FeCl3", "Temir(III) xlorid"),
+            ("FeCl2", "Temir(II) xlorid"),
+            ("Cu2O", "Mis(I) oksid"),
+            ("MgCl2", "Magniy xlorid"),
+            ("N2O4", "Diazot tetraoksid"),
+            ("KNO3", "Kaliy nitrat"),
+            ("H2O", "Suv"),
         ],
     )
     def test_names(self, formula: str, name: str) -> None:
