@@ -22,12 +22,17 @@ class KeyGroup:
 
     name: str
     keys: tuple[str, ...]
-    columns: int = 6
+    columns: int = 8
     hint: str = ""
     labels: dict[str, str] | None = None
+    tips: dict[str, str] | None = None
 
     def label_for(self, key: str) -> str:
         return (self.labels or {}).get(key, key)
+
+    def tip_for(self, key: str) -> str | None:
+        """Tooltip for a key whose label had to be abbreviated to fit."""
+        return (self.tips or {}).get(key)
 
 
 COMMON_ELEMENTS: Final[tuple[str, ...]] = (
@@ -41,25 +46,25 @@ GROUPS: Final[tuple[KeyGroup, ...]] = (
     KeyGroup(
         "Elements",
         COMMON_ELEMENTS,
-        columns=6,
+        columns=10,
         hint="The elements a syllabus uses most. Every other symbol can be typed directly.",
     ),
     KeyGroup(
         "Numbers",
         ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
-        columns=6,
+        columns=10,
         hint="A number typed before a formula is a coefficient; after a symbol it is a subscript.",
     ),
     KeyGroup(
         "Subscripts",
         ("₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉", "₁", "₀"),
-        columns=6,
+        columns=10,
         hint="Optional — typing H2O gives the same result as H₂O. Both are stored as H2O.",
     ),
     KeyGroup(
         "Charges",
         ("⁺", "⁻", "²⁺", "³⁺", "²⁻", "³⁻", "^", "^2+", "^2-", "^3+"),
-        columns=6,
+        columns=10,
         hint="Charges go after the formula: Fe³⁺, SO₄²⁻, NH₄⁺.",
     ),
     KeyGroup(
@@ -71,9 +76,10 @@ GROUPS: Final[tuple[KeyGroup, ...]] = (
     KeyGroup(
         "Operators",
         (" + ", " -> ", " <-> ", "=", "*", "↑", "↓"),
-        columns=6,
-        hint="↑ and ↓ are read as (g) and (s).",
-        labels={" + ": "+", " -> ": "→", " <-> ": "⇌", "*": "· (hydrate)", "=": "="},
+        columns=7,
+        hint="↑ and ↓ are read as (g) and (s). · joins the water in a hydrate.",
+        labels={" + ": "+", " -> ": "→", " <-> ": "⇌", "*": "·", "=": "="},
+        tips={"*": "Hydrate dot — CuSO4*5H2O reads as CuSO₄·5H₂O"},
     ),
     KeyGroup(
         "States",
@@ -92,6 +98,10 @@ GROUPS: Final[tuple[KeyGroup, ...]] = (
 CONDITION_KEYS: Final[tuple[str, ...]] = (
     "Pt", "MnO2", "Ni", "V2O5", "Fe", "Δ (heat)", "hv (light)", "high pressure", "electrolysis",
 )
+
+CONDITION_LABELS: Final[dict[str, str]] = {
+    "Δ (heat)": "Δ", "hv (light)": "hv", "high pressure": "press", "electrolysis": "electro",
+}
 
 EXAMPLES: Final[tuple[tuple[str, str, str], ...]] = (
     ("Water", "Water from its elements", "H2 + O2 -> H2O"),
@@ -144,6 +154,7 @@ def keyboard(target_key: str, conditions_key: str | None = None) -> None:
                     lambda token: _append(target_key, token),
                     prefix=f"kb-{group.name}",
                     label=group.label_for,
+                    tip=group.tip_for,
                 )
 
         if conditions_key:
@@ -152,18 +163,21 @@ def keyboard(target_key: str, conditions_key: str | None = None) -> None:
                 st.session_state.setdefault(conditions_key, "")
                 _key_grid(
                     CONDITION_KEYS,
-                    6,
+                    9,
                     lambda token: _append_condition(conditions_key, token),
                     prefix="kb-cond",
+                    label=lambda key: CONDITION_LABELS.get(key, key),
+                    tip=lambda key: key if key in CONDITION_LABELS else None,
                 )
 
-        edit_columns = st.columns(3)
-        with edit_columns[0]:
-            st.button("⌫ Backspace", key="kb-back", on_click=_backspace, args=(target_key,))
-        with edit_columns[1]:
-            st.button("Space", key="kb-space", on_click=_append, args=(target_key, " "))
-        with edit_columns[2]:
-            st.button("Clear", key="kb-clear", on_click=_clear, args=(target_key,))
+        with st.container(key="keygrid-edit"):
+            edit_columns = st.columns(3)
+            with edit_columns[0]:
+                st.button("⌫ Backspace", key="kb-back", on_click=_backspace, args=(target_key,))
+            with edit_columns[1]:
+                st.button("Space", key="kb-space", on_click=_append, args=(target_key, " "))
+            with edit_columns[2]:
+                st.button("Clear", key="kb-clear", on_click=_clear, args=(target_key,))
 
 
 def _append_condition(conditions_key: str, token: str) -> None:
@@ -177,20 +191,28 @@ def _key_grid(
     on_press: Callable[[str], None],
     prefix: str,
     label: Callable[[str], str] | None = None,
+    tip: Callable[[str], str | None] | None = None,
 ) -> None:
-    """Lay keys out in a grid of buttons."""
-    for start in range(0, len(keys), columns):
-        row = keys[start: start + columns]
-        slots = st.columns(columns)
-        for index, key in enumerate(row):
-            with slots[index]:
-                st.button(
-                    label(key) if label else key,
-                    key=f"{prefix}-{start + index}-{key}",
-                    on_click=on_press,
-                    args=(key,),
-                    width="stretch",
-                )
+    """Lay keys out in a grid of small buttons.
+
+    The grid sits in a ``keygrid-`` container, which the stylesheet holds to
+    one row per line at any width — otherwise a phone stacks forty element
+    keys into forty full-width rows.
+    """
+    with st.container(key=f"keygrid-{prefix}"):
+        for start in range(0, len(keys), columns):
+            row = keys[start: start + columns]
+            slots = st.columns(columns)
+            for index, key in enumerate(row):
+                with slots[index]:
+                    st.button(
+                        label(key) if label else key,
+                        key=f"{prefix}-{start + index}-{key}",
+                        help=tip(key) if tip else None,
+                        on_click=on_press,
+                        args=(key,),
+                        width="stretch",
+                    )
 
 
 def live_preview(text: str) -> None:

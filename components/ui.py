@@ -189,13 +189,25 @@ div.stButton > button[kind="primary"] {
   background: var(--copper); color: #06231C; border-color: var(--copper); font-weight: 600;
 }
 div.stButton > button[kind="primary"]:hover { background: #45D8B8; color: #06231C; }
-/* Example picker — six compact keys per row, never stacked ----------------- */
-.st-key-example-grid [data-testid="stHorizontalBlock"] { flex-wrap: nowrap !important; gap: 0.3rem; }
-.st-key-example-grid [data-testid="stColumn"] { min-width: 0 !important; flex: 1 1 0 !important; }
-.st-key-example-grid div.stButton > button {
-  padding: 0.18rem 0.15rem; font-size: 0.72rem; min-height: 0; line-height: 1.35;
+/* Key grids — keyboard and examples ---------------------------------------
+   Streamlit stacks columns one-per-row below 640px, which turns forty element
+   keys into forty full-width bars. These grids stay horizontal at any width. */
+.st-key-example-grid [data-testid="stHorizontalBlock"],
+[class*="st-key-keygrid"] [data-testid="stHorizontalBlock"] {
+  flex-wrap: nowrap !important; gap: 0.25rem !important;
+}
+.st-key-example-grid [data-testid="stColumn"],
+[class*="st-key-keygrid"] [data-testid="stColumn"] {
+  min-width: 0 !important; flex: 1 1 0 !important;
+}
+[class*="st-key-keygrid"] > [data-testid="stVerticalBlock"] { gap: 0.25rem !important; }
+.st-key-example-grid div.stButton > button,
+[class*="st-key-keygrid"] div.stButton > button {
+  padding: 0.2rem 0.1rem; font-size: 0.76rem; min-height: 0; line-height: 1.35;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.st-key-example-grid div.stButton > button { font-size: 0.72rem; }
+.st-key-keygrid-edit div.stButton > button { font-size: 0.72rem; }
 .stTabs [data-baseweb="tab"] { font-family: var(--mono); font-size: 0.82rem; }
 .stTabs [aria-selected="true"] { color: var(--copper) !important; }
 div[data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 4px; }
